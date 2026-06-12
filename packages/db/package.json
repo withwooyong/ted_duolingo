@@ -1,0 +1,26 @@
+{
+  "name": "@ted/db",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "deploy": "prisma migrate deploy",
+    "seed": "tsx prisma/seed.ts",
+    "studio": "prisma studio",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'db: lint 없음 (typecheck로 대체)'"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.0",
+    "@ted/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "prisma": "^6.16.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.0"
+  }
+}

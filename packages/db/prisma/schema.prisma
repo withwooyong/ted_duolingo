@@ -1,0 +1,215 @@
+// Ted Duolingo — DB 스키마 (PLAN.md §6)
+// Supabase PostgreSQL 위에서 Prisma가 테이블 스키마를 관리한다.
+// RLS 정책·트리거는 Prisma가 관리하지 못하므로 supabase/migrations/*.sql 참조.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Supabase pooler (트랜잭션 모드)
+  directUrl = env("DIRECT_URL") // 마이그레이션용 직접 연결
+}
+
+/// 문제 유형 5종 (PLAN.md §3.2) — @ted/shared의 ExerciseType과 동일 값
+enum ExerciseType {
+  LISTEN_SELECT
+  FILL_BLANK
+  MATCH_PAIRS
+  ORDER_WORDS
+  COMPREHENSION_MCQ
+}
+
+enum LeagueTier {
+  BRONZE
+  SILVER
+  GOLD
+  SAPPHIRE
+  DIAMOND
+}
+
+/// 사용자 프로필 — Supabase auth.users와 1:1 (id = auth.uid()).
+/// 가입 시 트리거가 자동 생성한다 (supabase/migrations 참조).
+model Profile {
+  id               String     @id @db.Uuid
+  displayName      String     @map("display_name")
+  nativeLang       String     @default("ko") @map("native_lang")
+  xp               Int        @default(0)
+  hearts           Int        @default(5)
+  heartsUpdatedAt  DateTime   @default(now()) @map("hearts_updated_at")
+  streak           Int        @default(0)
+  longestStreak    Int        @default(0) @map("longest_streak")
+  leagueTier       LeagueTier @default(BRONZE) @map("league_tier")
+  weeklyXp         Int        @default(0) @map("weekly_xp")
+  dailyGoalXp      Int        @default(20) @map("daily_goal_xp")
+  isPremium        Boolean    @default(false) @map("is_premium")
+  premiumExpiresAt DateTime?  @map("premium_expires_at")
+  lastStudyDate    DateTime?  @map("last_study_date") @db.Date
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  languages       UserLanguage[]
+  progress        UserProgress[]
+  exerciseHistory UserExerciseHistory[]
+  badges          UserBadge[]
+  leagueEntries   LeagueEntry[]
+
+  @@map("profiles")
+}
+
+/// 언어쌍 (예: ko → en). 학습 콘텐츠는 언어쌍별로 분리된다 (PLAN.md §9.2)
+model LanguagePair {
+  id          String @id @default(cuid())
+  sourceLang  String @map("source_lang")
+  targetLang  String @map("target_lang")
+  displayName String @map("display_name")
+
+  skills   Skill[]
+  learners UserLanguage[]
+
+  @@unique([sourceLang, targetLang])
+  @@map("language_pairs")
+}
+
+/// 스킬 트리의 노드 (단원 내 스킬)
+model Skill {
+  id             String  @id @default(cuid())
+  languagePairId String  @map("language_pair_id")
+  order          Int
+  title          String
+  icon           String
+  description    String?
+
+  languagePair LanguagePair @relation(fields: [languagePairId], references: [id], onDelete: Cascade)
+  lessons      Lesson[]
+
+  @@unique([languagePairId, order])
+  @@map("skills")
+}
+
+model Lesson {
+  id       String @id @default(cuid())
+  skillId  String @map("skill_id")
+  order    Int
+  title    String
+  xpReward Int    @default(10) @map("xp_reward")
+
+  skill     Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  exercises Exercise[]
+  progress  UserProgress[]
+
+  @@unique([skillId, order])
+  @@map("lessons")
+}
+
+model Exercise {
+  id          String       @id @default(cuid())
+  lessonId    String       @map("lesson_id")
+  order       Int
+  type        ExerciseType
+  prompt      String
+  /// 유형별 payload — @ted/shared ExercisePayload 형태의 JSON
+  options     Json
+  audioUrl    String?      @map("audio_url")
+  explanation String?
+  sourceLang  String       @map("source_lang")
+  targetLang  String       @map("target_lang")
+
+  lesson  Lesson                @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  history UserExerciseHistory[]
+
+  @@unique([lessonId, order])
+  @@map("exercises")
+}
+
+/// 사용자가 학습 중인 언어쌍 (Freemium: 무료는 1개 — PLAN.md §3.4)
+model UserLanguage {
+  userId         String   @map("user_id") @db.Uuid
+  languagePairId String   @map("language_pair_id")
+  isActive       Boolean  @default(true) @map("is_active")
+  addedAt        DateTime @default(now()) @map("added_at")
+
+  user         Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  languagePair LanguagePair @relation(fields: [languagePairId], references: [id], onDelete: Cascade)
+
+  @@id([userId, languagePairId])
+  @@map("user_languages")
+}
+
+/// 레슨 완료 기록 (반복 학습 허용 — 레코드 누적)
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id") @db.Uuid
+  lessonId    String   @map("lesson_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+  score       Int
+  total       Int
+  xpEarned    Int      @map("xp_earned")
+  /// 틀린 exerciseId 배열 (JSON)
+  mistakes    Json     @default("[]")
+
+  user   Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId])
+  @@map("user_progress")
+}
+
+/// 문제별 응답 이력 — SM-2 복습 알고리즘용 (Phase 4에 활용, 스키마는 선반영)
+model UserExerciseHistory {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id") @db.Uuid
+  exerciseId String   @map("exercise_id")
+  answeredAt DateTime @default(now()) @map("answered_at")
+  isCorrect  Boolean  @map("is_correct")
+
+  user     Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, exerciseId])
+  @@map("user_exercise_history")
+}
+
+model Badge {
+  id        String @id @default(cuid())
+  /// 코드에서 참조하는 안정 키 (예: 'first_lesson', 'streak_7')
+  key       String @unique
+  title     String
+  icon      String
+  /// 달성 조건 설명 (판정 로직은 코드/Edge Function에 있음)
+  condition String
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  userId   String   @map("user_id") @db.Uuid
+  badgeId  String   @map("badge_id")
+  earnedAt DateTime @default(now()) @map("earned_at")
+
+  user  Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge   @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@map("user_badges")
+}
+
+/// 주간 리그 참가 기록 (주 시작일 + 사용자 단위)
+model LeagueEntry {
+  weekStart DateTime   @map("week_start") @db.Date
+  userId    String     @map("user_id") @db.Uuid
+  tier      LeagueTier
+  /// 같은 리그 방(10명 코호트) 식별자
+  cohortId  String     @map("cohort_id")
+  weeklyXp  Int        @default(0) @map("weekly_xp")
+  rank      Int?
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([weekStart, userId])
+  @@index([weekStart, cohortId])
+  @@map("league_entries")
+}
