@@ -25,6 +25,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 - e2e 테스트 — Expo web + Playwright 학습 루프 전체 23개 체크 (apps/mobile/e2e/) (`5cf29ea`)
 
 ### Changed
+- 저장소 공개 전환 (private → public, 커밋 내 시크릿 부재 확인 후) — github.com/withwooyong/ted_duolingo
+- 세션 인수인계 문서 생성 (CHANGELOG, HANDOFF) (`9aee25f`)
 - PLAN.md v0.3 — 부록 B 확정: D11 ko→en, D12 Supabase only, D13 Admin Phase 3 (`ce530e9`)
 - CI 액션 업그레이드 — checkout/setup-node v5, pnpm/action-setup v6 (Node 20 지원 종료 대응) (`d15ea3a`, `a55b9fa`)
 - RLS SQL을 supabase/migrations/ → supabase/policies/로 이동 — supabase start가 Prisma 테이블 생성 전 자동 적용해 기동 실패하는 문제 (`8de65cb`)

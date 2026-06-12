@@ -1,12 +1,13 @@
 # Session Handoff
 
-> Last updated: 2026-06-12 17:40 (KST)
-> Branch: `main`
-> Latest commit: `5cf29ea` - Phase 1: 핵심 학습 루프 구현 (e2e 23개 체크 검증 완료)
+> Last updated: 2026-06-12 17:50 (KST)
+> Branch: `main` (origin과 동기화됨, 미푸시 커밋 없음)
+> Latest commit: `9aee25f` - docs: 세션 인수인계 문서 생성 (CHANGELOG, HANDOFF)
+> Repo: https://github.com/withwooyong/ted_duolingo (**public**, CI 녹색)
 
 ## Current Status
 
-Phase 0(기반)과 Phase 1(핵심 학습 루프)이 완료된 상태. 로컬 Supabase 위에서 가입→온보딩→레슨 플레이(5종 문제)→XP/스트릭/하트까지 전부 실동작하며 e2e 23개 체크로 검증됨. 다음은 Phase 2(풀 게임화).
+Phase 0(기반)과 Phase 1(핵심 학습 루프)이 완료된 상태. 로컬 Supabase 위에서 가입→온보딩→레슨 플레이(5종 문제)→XP/스트릭/하트까지 전부 실동작하며 e2e 23개 체크로 검증됨. 전체 커밋이 GitHub(public)에 푸시됨. 다음은 Phase 2(풀 게임화).
 
 ## Completed This Session
 
@@ -18,6 +19,7 @@ Phase 0(기반)과 Phase 1(핵심 학습 루프)이 완료된 상태. 로컬 Sup
 | 4 | 로컬 Supabase + 이메일 Auth + RLS·시드 적용 | `8de65cb` | supabase/config.toml, src/app/auth.tsx, src/stores/auth.ts |
 | 5 | 핵심 학습 루프 전체 (5종 문제·레슨·게임화·온보딩·스킬 트리) | `5cf29ea` | src/components/exercise/, src/hooks/, src/app/ |
 | 6 | e2e 검증 (Playwright 23개 체크) + 단위 테스트 17개 | `5cf29ea` | apps/mobile/e2e/, packages/shared/src/logic.test.ts |
+| 7 | 전체 커밋 푸시 + 저장소 public 전환 (시크릿 부재 확인) | — | github.com/withwooyong/ted_duolingo |
 
 ## In Progress / Pending
 
@@ -27,7 +29,6 @@ Phase 0(기반)과 Phase 1(핵심 학습 루프)이 완료된 상태. 로컬 Sup
 | 2 | Google·Apple OAuth | ⬜ 보류 | 클라우드 Supabase 전환 시 (로컬은 이메일만) |
 | 3 | 게임화 수치 서버 검증 | ⬜ Phase 2 | 현재 클라이언트가 profiles 직접 update — Edge Function으로 이전 예정 |
 | 4 | 완료 스킬 복습 기능 | ⬜ 미정 | 홈에서 완료 스킬 탭 시 "곧 추가" 알림만 표시 |
-| 5 | 커밋 3개 미푸시 | 🟡 | `8de65cb`, `1494ae7`, `5cf29ea` — 푸시는 사용자 명시 요청 시만 |
 
 ## Key Decisions Made
 
