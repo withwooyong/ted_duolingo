@@ -37,17 +37,17 @@ model Profile {
   nativeLang       String     @default("ko") @map("native_lang")
   xp               Int        @default(0)
   hearts           Int        @default(5)
-  heartsUpdatedAt  DateTime   @default(now()) @map("hearts_updated_at")
+  heartsUpdatedAt  DateTime   @default(now()) @map("hearts_updated_at") @db.Timestamptz(3)
   streak           Int        @default(0)
   longestStreak    Int        @default(0) @map("longest_streak")
   leagueTier       LeagueTier @default(BRONZE) @map("league_tier")
   weeklyXp         Int        @default(0) @map("weekly_xp")
   dailyGoalXp      Int        @default(20) @map("daily_goal_xp")
   isPremium        Boolean    @default(false) @map("is_premium")
-  premiumExpiresAt DateTime?  @map("premium_expires_at")
+  premiumExpiresAt DateTime?  @map("premium_expires_at") @db.Timestamptz(3)
   lastStudyDate    DateTime?  @map("last_study_date") @db.Date
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @default(now()) @updatedAt @map("updated_at")
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   languages       UserLanguage[]
   progress        UserProgress[]
@@ -128,7 +128,7 @@ model UserLanguage {
   userId         String   @map("user_id") @db.Uuid
   languagePairId String   @map("language_pair_id")
   isActive       Boolean  @default(true) @map("is_active")
-  addedAt        DateTime @default(now()) @map("added_at")
+  addedAt        DateTime @default(now()) @map("added_at") @db.Timestamptz(3)
 
   user         Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
   languagePair LanguagePair @relation(fields: [languagePairId], references: [id], onDelete: Cascade)
@@ -142,7 +142,7 @@ model UserProgress {
   id          String   @id @default(cuid())
   userId      String   @map("user_id") @db.Uuid
   lessonId    String   @map("lesson_id")
-  completedAt DateTime @default(now()) @map("completed_at")
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(3)
   score       Int
   total       Int
   xpEarned    Int      @map("xp_earned")
@@ -161,7 +161,7 @@ model UserExerciseHistory {
   id         String   @id @default(cuid())
   userId     String   @map("user_id") @db.Uuid
   exerciseId String   @map("exercise_id")
-  answeredAt DateTime @default(now()) @map("answered_at")
+  answeredAt DateTime @default(now()) @map("answered_at") @db.Timestamptz(3)
   isCorrect  Boolean  @map("is_correct")
 
   user     Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -188,7 +188,7 @@ model Badge {
 model UserBadge {
   userId   String   @map("user_id") @db.Uuid
   badgeId  String   @map("badge_id")
-  earnedAt DateTime @default(now()) @map("earned_at")
+  earnedAt DateTime @default(now()) @map("earned_at") @db.Timestamptz(3)
 
   user  Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge Badge   @relation(fields: [badgeId], references: [id], onDelete: Cascade)

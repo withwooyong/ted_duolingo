@@ -101,6 +101,8 @@ export interface ProfileDto {
   nativeLang: string;
   xp: number;
   hearts: number;
+  /** 하트 충전 기준 시각 (ISO) — refillHearts 계산용 */
+  heartsUpdatedAt: string;
   streak: number;
   longestStreak: number;
   leagueTier: LeagueTier;

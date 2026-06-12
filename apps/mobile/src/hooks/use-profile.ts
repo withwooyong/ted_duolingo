@@ -11,6 +11,7 @@ interface ProfileRow {
   native_lang: string;
   xp: number;
   hearts: number;
+  hearts_updated_at: string;
   streak: number;
   longest_streak: number;
   league_tier: ProfileDto['leagueTier'];
@@ -27,6 +28,7 @@ function toDto(row: ProfileRow): ProfileDto {
     nativeLang: row.native_lang,
     xp: row.xp,
     hearts: row.hearts,
+    heartsUpdatedAt: row.hearts_updated_at,
     streak: row.streak,
     longestStreak: row.longest_streak,
     leagueTier: row.league_tier,
@@ -46,7 +48,7 @@ export function useProfile() {
       const { data, error } = await supabase
         .from('profiles')
         .select(
-          'id, display_name, native_lang, xp, hearts, streak, longest_streak, league_tier, weekly_xp, daily_goal_xp, is_premium, last_study_date',
+          'id, display_name, native_lang, xp, hearts, hearts_updated_at, streak, longest_streak, league_tier, weekly_xp, daily_goal_xp, is_premium, last_study_date',
         )
         .eq('id', session!.user.id)
         .single();

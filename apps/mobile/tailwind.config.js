@@ -2,6 +2,8 @@
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
   presets: [require('nativewind/preset')],
+  // 웹에서 Appearance.setColorScheme('light')가 media 모드와 충돌하지 않도록 class 모드 사용
+  darkMode: 'class',
   theme: {
     extend: {
       // Duolingo 스타일 팔레트 — 프로토타입(prototype/index.html)과 동일

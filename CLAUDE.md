@@ -25,6 +25,8 @@ supabase stop         # 중지
 
 개발은 로컬 Supabase 기준 (`.env`들은 로컬 기본값, gitignore 대상). 처음 띄울 때 순서: `supabase start` → `pnpm db:migrate` → RLS SQL 수동 적용(아래) → `pnpm db:seed`.
 
+테스트: `pnpm test` (shared의 vitest — 게임화 로직). e2e는 `apps/mobile/e2e/learning_loop.py` (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조).
+
 테스트 프레임워크는 아직 없음 (Phase 1에서 도입 예정).
 
 ## 아키텍처
@@ -42,6 +44,14 @@ pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supab
 ```bash
 cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --file ../../supabase/policies/0001_rls_and_triggers.sql
 ```
+
+주의할 함정들:
+
+- **DateTime 컬럼은 반드시 `@db.Timestamptz(3)`** — Prisma 기본 timestamp(타임존 없음)는 KST 클라이언트의 `Date.parse`가 9시간 오차를 만들어 하트 충전 등이 깨진다
+- Prisma `@default(cuid())`는 DB 기본값이 아니라서 supabase-js insert 시 **id를 직접 생성해야 한다** (`expo-crypto`의 `Crypto.randomUUID()`)
+- Expo web은 `single`(SPA) 모드 — `static`(SSR)은 Supabase 클라이언트가 Node 렌더에서 죽는다
+- 렌더 중 `Date.now()` 호출은 React Compiler 린트가 막는다 — `use-game.ts`의 `useNow()`(useSyncExternalStore) 사용
+- 시드의 LISTEN/MCQ 정답은 `options[0]` 고정 — 보기 셔플은 컴포넌트 표시 시점(`shuffled()`)
 
 ## 핵심 도메인 개념
 

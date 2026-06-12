@@ -6,9 +6,11 @@
   "types": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'shared: lint 없음 (typecheck로 대체)'"
+    "lint": "echo 'shared: lint 없음 (typecheck로 대체)'",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "~5.9.0"
+    "typescript": "~5.9.0",
+    "vitest": "^4.1.8"
   }
 }
