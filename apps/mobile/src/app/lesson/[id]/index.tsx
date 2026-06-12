@@ -123,6 +123,9 @@ export default function LessonScreen() {
           correct: String(play.correct),
           total: String(total),
           streak: String(result.streak),
+          badges: JSON.stringify(
+            result.newBadges.map((b) => ({ icon: b.icon, title: b.title })),
+          ),
         },
       });
     } catch {

@@ -14,6 +14,15 @@ export type ExerciseType =
 /** 리그 티어 (PLAN.md §3.3 — Bronze → Diamond) */
 export type LeagueTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'SAPPHIRE' | 'DIAMOND';
 
+/** 배지 키 — DB badges.key와 동일 값 (packages/db 시드 참조) */
+export type BadgeKey =
+  | 'first_lesson'
+  | 'streak_3'
+  | 'streak_7'
+  | 'xp_500'
+  | 'perfect_lesson'
+  | 'league_promote';
+
 /* ── 문제 유형별 payload (Exercise.options JSON의 타입) ───────────── */
 
 /** 듣고 고르기 — audioText를 TTS/오디오로 재생, 보기 중 선택 */

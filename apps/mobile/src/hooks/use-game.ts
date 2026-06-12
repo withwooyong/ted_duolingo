@@ -1,5 +1,6 @@
 import {
   consumeHeart,
+  earnedBadgeKeys,
   lessonXp,
   localDateString,
   nextStreak,
@@ -11,6 +12,7 @@ import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
 
 import { useProfile } from '@/hooks/use-profile';
+import { awardBadges, ensureLeagueEntry, type AwardedBadge } from '@/lib/gamification';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/stores/auth';
 
@@ -100,11 +102,13 @@ export interface CompleteLessonInput {
 export interface CompleteLessonOutput {
   xpEarned: number;
   streak: number;
+  /** 이번 완료로 새로 획득한 배지 */
+  newBadges: AwardedBadge[];
 }
 
 /**
- * 레슨 완료 처리 — 진행 저장 + 문제 이력 + 프로필(XP·스트릭) 갱신.
- * 게임화 수치의 서버 측 검증은 Phase 2에서 Edge Function으로 이전 (CLAUDE.md 참조).
+ * 레슨 완료 처리 — 진행 저장 + 문제 이력 + 프로필(XP·스트릭) + 리그 주간 XP + 배지.
+ * 게임화 수치의 서버 측 검증은 Phase 2 후반 Edge Function으로 이전 (CLAUDE.md 참조).
  */
 export function useCompleteLesson() {
   const session = useAuth((s) => s.session);
@@ -116,6 +120,11 @@ export function useCompleteLesson() {
       if (!session || !profile) throw new Error('로그인이 필요해요');
       const userId = session.user.id;
       const xpEarned = lessonXp(xpReward, result.score, result.total);
+
+      // 이번 주 리그 참가 보장 — 새 주면 직전 주 마감(주간 XP 리셋)이 먼저 일어나므로
+      // 주간 XP는 profile이 아닌 리그 행 기준으로 누적한다
+      const { entry } = await ensureLeagueEntry(profile);
+      const weeklyXp = entry.weekly_xp + xpEarned;
 
       const { error: progressErr } = await supabase.from('user_progress').insert({
         id: Crypto.randomUUID(),
@@ -142,11 +151,12 @@ export function useCompleteLesson() {
 
       const today = localDateString(new Date());
       const streak = nextStreak(profile.lastStudyDate, today, profile.streak);
+      const totalXp = profile.xp + xpEarned;
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({
-          xp: profile.xp + xpEarned,
-          weekly_xp: profile.weeklyXp + xpEarned,
+          xp: totalXp,
+          weekly_xp: weeklyXp,
           streak,
           longest_streak: Math.max(profile.longestStreak, streak),
           last_study_date: today,
@@ -154,12 +164,36 @@ export function useCompleteLesson() {
         .eq('id', userId);
       if (profileErr) throw profileErr;
 
-      return { xpEarned, streak } satisfies CompleteLessonOutput;
+      const { error: leagueErr } = await supabase
+        .from('league_entries')
+        .update({ weekly_xp: weeklyXp })
+        .eq('week_start', entry.week_start)
+        .eq('user_id', userId);
+      if (leagueErr) throw leagueErr;
+
+      // 배지 판정 — 달성 키 전체를 구하고, 이미 보유한 배지는 awardBadges가 거른다
+      const { count } = await supabase
+        .from('user_progress')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      const earned = earnedBadgeKeys({
+        lessonsCompleted: count ?? 1,
+        streak,
+        totalXp,
+        perfectLesson: result.total > 0 && result.score === result.total,
+        leaguePromoted: false, // 승급 배지는 주간 마감(ensureLeagueEntry)에서 수여
+      });
+      const newBadges = await awardBadges(userId, earned);
+
+      return { xpEarned, streak, newBadges } satisfies CompleteLessonOutput;
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['skill-tree'] });
       queryClient.invalidateQueries({ queryKey: ['daily-xp'] });
+      queryClient.invalidateQueries({ queryKey: ['league'] });
+      queryClient.invalidateQueries({ queryKey: ['badges'] });
+      queryClient.invalidateQueries({ queryKey: ['lessons-done'] });
     },
   });
 }

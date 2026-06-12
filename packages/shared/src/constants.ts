@@ -31,6 +31,19 @@ export const LEAGUE_TIER_LABELS: Record<LeagueTier, string> = {
   DIAMOND: '다이아몬드',
 };
 
+export const LEAGUE_TIER_ICONS: Record<LeagueTier, string> = {
+  BRONZE: '🥉',
+  SILVER: '🥈',
+  GOLD: '🥇',
+  SAPPHIRE: '🔷',
+  DIAMOND: '💎',
+};
+
+/* ── 배지 달성 기준 (시드 badges와 짝 — packages/db/prisma/seed.ts) ── */
+export const BADGE_STREAK_SHORT = 3;
+export const BADGE_STREAK_LONG = 7;
+export const BADGE_XP_MILESTONE = 500;
+
 /* ── Freemium ── */
 export const FREE_MAX_LEARNING_LANGS = 1;
 

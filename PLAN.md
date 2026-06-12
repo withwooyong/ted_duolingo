@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v0.3 (부록 B 미확정 항목 확정 반영) | 2026-06-12
+> v0.4 (Phase 2 풀 게임화 구현 결정 D14·D15 반영) | 2026-06-12
 
 ---
 
@@ -31,6 +31,8 @@
 | D11 | MVP 첫 언어쌍 | **한국어 → 영어** (ko→en) |
 | D12 | 백엔드 | **Supabase only** (RLS + Edge Functions, NestJS 분리 없음) |
 | D13 | Admin Web | **Phase 3에 구축** (시드 콘텐츠는 수동 제작) |
+| D14 | 리그 주간 마감 | **클라이언트 수행** — 새 주 첫 진입 시 직전 주 순위 확정·승급/강등 (Edge Function 일원화는 클라우드 전환 시) |
+| D15 | 완료 연출 | **Reanimated 직접 구동** — Lottie는 디자이너 에셋 확보 시 교체 (entering 프리셋은 웹 미동작) |
 
 ### 1.3 목표
 
@@ -288,13 +290,15 @@ League
 - [x] 하트 시스템 (오답 소모, 시간당 충전, 0이면 차단)
 - e2e 검증: apps/mobile/e2e/learning_loop.py (23개 체크 통과)
 
-### Phase 2 — 풀 게임화
+### Phase 2 — 풀 게임화 ✅ (2026-06-12)
 
-- [ ] 스트릭 (연속 학습일, 알림)
-- [ ] 리그 / 주간 랭킹
-- [ ] 배지 / 업적
-- [ ] 일일 목표 UI
-- [ ] 레슨 완료·정답 연출 (Lottie)
+- [x] 스트릭 (연속 학습일, 알림 — expo-notifications 일일 리마인더, 네이티브 전용)
+- [x] 리그 / 주간 랭킹 (코호트 배정·주간 마감·승급/강등 — D14, 로컬 개발용 봇 9명 시드)
+- [x] 배지 / 업적 (6종 판정 @ted/shared `earnedBadgeKeys` + 레슨 완료·승급 시 수여)
+- [x] 일일 목표 UI (홈 진행 바 + 설정에서 목표 변경)
+- [x] 레슨 완료·정답 연출 (Reanimated 컨페티·등장 — D15, Lottie 에셋 확보 시 교체)
+- [ ] 게임화 수치 서버 검증 (Edge Function) — 클라우드 Supabase 전환 시 일원화
+- e2e 검증: apps/mobile/e2e/learning_loop.py (38개 체크 통과)
 
 ### Phase 3 — Freemium & 콘텐츠
 

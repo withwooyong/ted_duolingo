@@ -43,6 +43,7 @@ pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supab
 
 ```bash
 cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --file ../../supabase/policies/0001_rls_and_triggers.sql
+# policies/ 아래 SQL은 번호 순서대로 전부 적용 (0002: Phase 2 리그·배지 정책)
 ```
 
 주의할 함정들:
@@ -52,6 +53,8 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 - Expo web은 `single`(SPA) 모드 — `static`(SSR)은 Supabase 클라이언트가 Node 렌더에서 죽는다
 - 렌더 중 `Date.now()` 호출은 React Compiler 린트가 막는다 — `use-game.ts`의 `useNow()`(useSyncExternalStore) 사용
 - 시드의 LISTEN/MCQ 정답은 `options[0]` 고정 — 보기 셔플은 컴포넌트 표시 시점(`shuffled()`)
+- **Reanimated entering/exiting 프리셋(FadeIn 등)은 Expo web에서 동작하지 않음** — 요소가 안 보이는 상태로 멈춘다. shared value 직접 구동으로 구현할 것 (`complete.tsx`의 `Reveal`, `confetti.tsx` 참조)
+- 리그 주간 마감은 클라이언트가 새 주 첫 진입 시 수행 (`lib/gamification.ts`의 `ensureLeagueEntry`) — 주간 XP는 profiles가 아닌 league_entries 행 기준으로 누적
 
 ## 핵심 도메인 개념
 

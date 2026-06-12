@@ -1,4 +1,4 @@
-"""Ted Duolingo — 학습 루프 e2e (가입→온보딩→레슨→완료→홈 반영)"""
+"""Ted Duolingo — 학습 루프 e2e (가입→온보딩→레슨→완료→홈 반영→리그·프로필·설정)"""
 import sys
 import time
 
@@ -118,10 +118,14 @@ with sync_playwright() as p:
     tid(page, 'check-button').click()
     feedback_continue()
 
-    print('6) 완료 화면 (퍼펙트 +15 XP)')
+    print('6) 완료 화면 (퍼펙트 +15 XP + 새 배지)')
     page.wait_for_selector('[data-testid="complete-title"]', timeout=30000)
+    page.wait_for_timeout(1600)  # 등장 연출(최대 800ms 지연 + 450ms) 종료 대기
     check('완료: 퍼펙트 문구', '퍼펙트' in tid(page, 'complete-title').inner_text())
     check('완료: +15 XP (10+보너스5)', '+15' in tid(page, 'reward-xp').inner_text())
+    new_badges = tid(page, 'new-badges').inner_text()
+    check('완료: 첫 레슨 배지', '첫 레슨' in new_badges)
+    check('완료: 퍼펙트 레슨 배지', '퍼펙트 레슨' in new_badges)
     shot(page, '10_complete')
     tid(page, 'complete-continue').click()
 
@@ -136,7 +140,45 @@ with sync_playwright() as p:
     check('홈: 스킬1 진행 1/2', '1 / 2' in skill1)
     shot(page, '11_home_after')
 
-    print('8) 오답 → 하트 감소')
+    print('8) 리그 탭 (주간 랭킹 — 봇 코호트 합류)')
+    page.get_by_text('리그', exact=True).click()
+    page.wait_for_selector('[data-testid="league-tier"]', timeout=30000)
+    check('리그: 브론즈 리그', '브론즈' in tid(page, 'league-tier').inner_text())
+    me_row = tid(page, 'league-me')
+    check('리그: 내 행 표시', me_row.count() == 1)
+    check('리그: 내 주간 XP 15', '15 XP' in me_row.inner_text())
+    standings = tid(page, 'league-standings').inner_text()
+    # 주의: 봇 코호트(10명)는 e2e 반복 실행으로 차면 새 코호트가 만들어진다 — 인원수 대신 정렬을 검증
+    xps = [int(line.split(' XP')[0].split()[-1]) for line in standings.splitlines() if ' XP' in line]
+    check('리그: 주간 XP 내림차순 정렬', xps == sorted(xps, reverse=True) and len(xps) >= 1)
+    check('리그: 승급 구간 표시', '승급 구간' in standings)
+    shot(page, '13_league')
+
+    print('9) 프로필 탭 (통계·배지)')
+    page.get_by_text('프로필', exact=True).click()
+    page.wait_for_selector('[data-testid="profile-stats"]', timeout=30000)
+    stats = tid(page, 'profile-stats').inner_text()
+    check('프로필: 스트릭 1일', '1일' in stats)
+    check('프로필: 총 XP 15', '15' in stats)
+    check('프로필: 현재 리그 브론즈', '브론즈' in stats)
+    check('프로필: 첫 레슨 배지 획득', tid(page, 'badge-first_lesson-earned').count() == 1)
+    check('프로필: 퍼펙트 배지 획득', tid(page, 'badge-perfect_lesson-earned').count() == 1)
+    check('프로필: 7일 스트릭 배지 잠김', tid(page, 'badge-streak_7').count() == 1)
+    shot(page, '14_profile')
+
+    print('10) 설정 (일일 목표 변경·리마인더)')
+    page.get_by_text('설정', exact=True).click()
+    page.wait_for_selector('[data-testid="daily-goal-options"]', timeout=30000)
+    check('설정: 리마인더 웹 안내', '웹에서는 지원하지 않아요' in page.content())
+    tid(page, 'goal-30').click()
+    page.wait_for_timeout(1500)  # 프로필 invalidate 반영
+    shot(page, '15_settings')
+    page.get_by_text('뒤로', exact=True).click()
+    page.get_by_text('홈', exact=True).click()
+    page.wait_for_selector('[data-testid="daily-goal"]', timeout=30000)
+    check('설정 반영: 일일 목표 15/30', '15 / 30' in tid(page, 'daily-goal').inner_text())
+
+    print('11) 오답 → 하트 감소')
     tid(page, 'continue-button').click()  # 안부 묻기 레슨
     page.wait_for_selector('[data-testid="speaker"]')  # 듣기: How are you?
     page.get_by_text('Who are you?', exact=True).click()  # 일부러 오답

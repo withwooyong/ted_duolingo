@@ -8,7 +8,7 @@
  * (Cascade로 user_progress도 함께 삭제되므로 운영 DB에서는 사용 금지)
  */
 import { PrismaClient, ExerciseType } from '@prisma/client';
-import type { ExercisePayload } from '@ted/shared';
+import { weekStartDate, type ExercisePayload } from '@ted/shared';
 
 const prisma = new PrismaClient();
 
@@ -295,8 +295,61 @@ const BADGES = [
   { key: 'league_promote', title: '리그 승급', icon: '🏆', condition: '상위 리그로 승급' },
 ];
 
+/* ── 리그 봇 (prototype/index.html LEAGUE_BOTS와 동일) ──────────
+ * 로컬 개발에서 사용자가 1명뿐이라 리그가 비기 때문에 봇으로 코호트를 채운다.
+ * auth.users 없이 profiles에만 존재 (Prisma 스키마에 auth FK가 없어 가능).
+ * 재시드하면 봇 참가 기록이 현재 주차로 갱신된다.
+ */
+const LEAGUE_BOTS = [
+  { name: 'Sora', weeklyXp: 342 },
+  { name: 'Minho', weeklyXp: 295 },
+  { name: 'Yuki', weeklyXp: 218 },
+  { name: 'Carlos', weeklyXp: 187 },
+  { name: 'Emma', weeklyXp: 154 },
+  { name: 'Jun', weeklyXp: 96 },
+  { name: 'Lily', weeklyXp: 71 },
+  { name: 'Alex', weeklyXp: 44 },
+  { name: 'Nina', weeklyXp: 12 },
+].map((bot, i) => ({
+  ...bot,
+  // 고정 UUID — 재시드 시 upsert 기준
+  id: `00000000-0000-4000-8000-00000000000${i + 1}`,
+}));
+
+async function seedLeagueBots() {
+  const weekStart = new Date(weekStartDate(new Date()));
+  const cohortId = `bots-${weekStart.toISOString().slice(0, 10)}`;
+  for (const bot of LEAGUE_BOTS) {
+    await prisma.profile.upsert({
+      where: { id: bot.id },
+      create: {
+        id: bot.id,
+        displayName: bot.name,
+        xp: bot.weeklyXp,
+        weeklyXp: bot.weeklyXp,
+        leagueTier: 'BRONZE',
+      },
+      update: { weeklyXp: bot.weeklyXp },
+    });
+    await prisma.leagueEntry.upsert({
+      where: { weekStart_userId: { weekStart, userId: bot.id } },
+      create: {
+        weekStart,
+        userId: bot.id,
+        tier: 'BRONZE',
+        cohortId,
+        weeklyXp: bot.weeklyXp,
+      },
+      update: { weeklyXp: bot.weeklyXp, cohortId },
+    });
+  }
+  console.log(`  리그 봇 ${LEAGUE_BOTS.length}명 upsert 완료 (주차 ${cohortId})`);
+}
+
 async function main() {
   console.log('🌱 시드 시작 — ko→en 기초 회화');
+
+  await seedLeagueBots();
 
   // 배지 (key 기준 idempotent)
   for (const b of BADGES) {
