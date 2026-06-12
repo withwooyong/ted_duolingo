@@ -270,13 +270,13 @@ League
 
 ## 8. 개발 로드맵 (품질 우선, 단계별)
 
-### Phase 0 — 기반
+### Phase 0 — 기반 ✅ (2026-06-12)
 
-- [ ] Monorepo 초기화 (Expo + Admin + shared)
-- [ ] Supabase + Prisma 스키마
-- [ ] Auth (이메일, Google, Apple)
-- [ ] 시드 데이터 (언어쌍 1~2개, 스킬·레슨·문제)
-- [ ] CI (lint, test, typecheck, EAS)
+- [x] Monorepo 초기화 (Expo + shared + db — Admin은 D13에 따라 Phase 3)
+- [x] Supabase + Prisma 스키마 (로컬 Supabase로 적용·검증)
+- [x] Auth — 이메일 완료 / Google·Apple은 클라우드 Supabase 전환 시
+- [x] 시드 데이터 (ko→en 1단원: 4스킬·5레슨·28문제, 수동 제작)
+- [x] CI (lint, typecheck — test·EAS는 Phase 1+)
 
 ### Phase 1 — 핵심 학습 루프
 
