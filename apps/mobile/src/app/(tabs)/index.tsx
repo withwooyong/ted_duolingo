@@ -1,18 +1,28 @@
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { useProfile } from '@/hooks/use-profile';
+
 /**
  * 홈 — 스킬 트리 (Phase 1에서 실제 UI 구현)
  * 프로토타입(prototype/index.html)의 홈 화면이 디자인 기준.
  */
 export default function HomeScreen() {
+  const { data: profile } = useProfile();
+
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="flex-row items-center justify-between border-b-2 border-line px-5 py-4">
         <Text className="text-base font-extrabold">🇺🇸</Text>
-        <Text className="text-base font-extrabold text-orange-500">🔥 0</Text>
-        <Text className="text-base font-extrabold text-danger">❤️ 5</Text>
-        <Text className="text-base font-extrabold text-gold">⭐ 0</Text>
+        <Text className="text-base font-extrabold text-orange-500" testID="hud-streak">
+          🔥 {profile?.streak ?? '–'}
+        </Text>
+        <Text className="text-base font-extrabold text-danger" testID="hud-hearts">
+          ❤️ {profile?.isPremium ? '∞' : (profile?.hearts ?? '–')}
+        </Text>
+        <Text className="text-base font-extrabold text-gold" testID="hud-xp">
+          ⭐ {profile?.xp ?? '–'}
+        </Text>
       </View>
 
       <View className="mx-5 mt-4 rounded-2xl bg-brand p-4">

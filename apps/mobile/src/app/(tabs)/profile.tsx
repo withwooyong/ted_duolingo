@@ -1,8 +1,14 @@
 import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
+import { useProfile } from '@/hooks/use-profile';
+import { useAuth } from '@/stores/auth';
+
 /** 프로필 — 통계·배지·구독 (Phase 1~3에서 구현) */
 export default function ProfileScreen() {
+  const { data: profile } = useProfile();
+  const signOut = useAuth((s) => s.signOut);
+
   return (
     <View className="flex-1 bg-white px-5 pt-16">
       <View className="flex-row items-center gap-4 border-b-2 border-line pb-5">
@@ -10,7 +16,9 @@ export default function ProfileScreen() {
           <Text className="text-3xl">🧑‍🎓</Text>
         </View>
         <View>
-          <Text className="text-xl font-extrabold">Ted</Text>
+          <Text className="text-xl font-extrabold" testID="profile-name">
+            {profile?.displayName ?? '...'}
+          </Text>
           <Text className="text-sm font-semibold text-ink-sub">🇰🇷 → 🇺🇸</Text>
         </View>
       </View>
@@ -29,6 +37,13 @@ export default function ProfileScreen() {
           <Text className="text-sm font-bold text-ink-sub">설정</Text>
         </Pressable>
       </Link>
+      <Pressable
+        className="mt-3 items-center rounded-2xl border-2 border-line py-3 active:opacity-60"
+        onPress={signOut}
+        testID="sign-out"
+      >
+        <Text className="text-sm font-bold text-danger">로그아웃</Text>
+      </Pressable>
     </View>
   );
 }

@@ -18,7 +18,12 @@ pnpm lint             # mobile은 expo lint, 나머지는 typecheck로 대체
 pnpm db:generate      # Prisma 클라이언트 생성 (typecheck 전 필요)
 pnpm db:migrate       # Prisma 마이그레이션 (packages/db/.env 필요)
 pnpm db:seed          # ko→en 시드 (⚠️ 해당 언어쌍 콘텐츠 삭제 후 재생성)
+
+supabase start        # 로컬 Supabase 기동 (Docker 필요, analytics는 비활성화됨)
+supabase stop         # 중지
 ```
+
+개발은 로컬 Supabase 기준 (`.env`들은 로컬 기본값, gitignore 대상). 처음 띄울 때 순서: `supabase start` → `pnpm db:migrate` → RLS SQL 수동 적용(아래) → `pnpm db:seed`.
 
 테스트 프레임워크는 아직 없음 (Phase 1에서 도입 예정).
 
@@ -29,9 +34,14 @@ pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supab
 - `apps/mobile/` — Expo SDK 56, Expo Router(파일 기반, `src/app/`), NativeWind(Tailwind), Zustand(로컬 상태) + TanStack Query(서버 상태) 분리 원칙
 - `packages/shared/` (`@ted/shared`) — 도메인 타입과 게임화 상수의 단일 소스. **문제 유형별 payload는 `ExercisePayload` 구별 유니온**으로 정의되어 DB JSON(`Exercise.options`)과 앱 컴포넌트가 공유
 - `packages/db/` (`@ted/db`) — Prisma 스키마(테이블만)와 시드. `Profile.id`는 Supabase `auth.users.id`(UUID)와 1:1
-- `supabase/migrations/` — **RLS 정책·트리거는 Prisma가 관리 못 하므로 SQL로 별도 관리.** 테이블 변경 시 RLS 정책도 함께 검토할 것. 가입 시 `handle_new_user` 트리거가 profiles 행을 자동 생성
+- `supabase/policies/` — **RLS 정책·트리거는 Prisma가 관리 못 하므로 SQL로 별도 관리.** `supabase/migrations/`에 두면 `supabase start`가 Prisma 테이블 생성 전에 자동 적용해 실패하므로 **반드시 policies/에 둔다.** 테이블 변경 시 RLS 정책도 함께 검토할 것. 가입 시 `handle_new_user` 트리거가 profiles 행을 자동 생성
+- 인증: 이메일 로그인/가입 구현됨 (`src/app/auth.tsx` + `src/stores/auth.ts`의 zustand 세션 스토어, 루트 레이아웃의 `Stack.Protected` 가드). Google·Apple OAuth는 클라우드 전환 시 추가
 
-스키마 변경 흐름: `schema.prisma` 수정 → `pnpm db:migrate` → 필요 시 `supabase/migrations/*.sql`에 RLS 추가 → Supabase SQL Editor로 적용.
+스키마 변경 흐름: `schema.prisma` 수정 → `pnpm db:migrate` → 필요 시 `supabase/policies/*.sql`에 RLS 추가 후 수동 적용:
+
+```bash
+cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --file ../../supabase/policies/0001_rls_and_triggers.sql
+```
 
 ## 핵심 도메인 개념
 
