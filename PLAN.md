@@ -35,6 +35,7 @@
 | D15 | 완료 연출 | **Reanimated 직접 구동** — Lottie는 디자이너 에셋 확보 시 교체 (entering 프리셋은 웹 미동작) |
 | D16 | 구독 결제 | **로컬은 mock 결제** (즉시 성공, profiles에 만료일 기록) — RevenueCat/IAP 실연동은 클라우드 전환 + EAS 빌드 시. 가격(월 9,900 / 연 79,000)은 임시값, 스토어 제출 전 확정 |
 | D17 | 두 번째 언어쌍 | **ko→ja** — 활성 언어쌍은 user_languages.is_active 기준 1개, 전환은 클라이언트. 무료는 1개(추가는 Premium) |
+| D18 | Admin 스택 | **Hono SSR(React 없음) + Prisma 직접 연결** — Expo hoisted node_modules의 React 중복 회피. AI 생성은 Claude(`claude-opus-4-8`) 구조화 출력, 키 없으면 모의 생성. 발행 전 `validateDraftSkill` 강제 |
 
 ### 1.3 목표
 
@@ -307,7 +308,7 @@ League
 - [x] 구독 mock + 페이월 (Free vs Premium 비교·월/연 플랜·해지 — D16, RevenueCat/IAP 실연동은 클라우드 전환 시)
 - [x] Premium 기능 (무제한 하트, 광고 제거 — 무료는 완료 화면 광고 placeholder, 실광고는 네이티브 빌드 시)
 - [x] 추가 언어쌍 확장 (ko→ja 시드 + 언어 전환·추가 UI, 무료 1개 제한 → 페이월 — D17)
-- [ ] Admin: AI 생성 + 검수 워크플로
+- [x] Admin: AI 생성 + 검수 워크플로 (apps/admin — Hono SSR, 생성→검수→발행, D18. e2e 15개 체크)
 - [ ] RevenueCat + IAP 실연동 — 클라우드 Supabase 전환 + EAS 빌드 후
 
 ### Phase 4 — 고도화

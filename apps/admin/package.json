@@ -1,0 +1,24 @@
+{
+  "name": "admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ted Duolingo Admin — AI 콘텐츠 생성 + 검수 워크플로 (내부 도구)",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.tsx",
+    "start": "tsx --env-file=.env src/server.tsx",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.74.0",
+    "@hono/node-server": "^1.19.0",
+    "@prisma/client": "^6.16.0",
+    "@ted/shared": "workspace:*",
+    "hono": "^4.9.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.0"
+  }
+}

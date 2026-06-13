@@ -197,6 +197,36 @@ model UserBadge {
   @@map("user_badges")
 }
 
+/// 콘텐츠 드래프트 검수 상태 (Admin 워크플로 — PLAN.md §3.5)
+enum DraftStatus {
+  PENDING
+  REJECTED
+  PUBLISHED
+}
+
+/// AI 생성 콘텐츠 드래프트 — 사람 검수 후 발행 (D4·D13).
+/// Admin(Prisma 직접 연결)만 접근 — RLS는 정책 없이 활성화해 anon API 접근을 차단한다.
+model ContentDraft {
+  id             String      @id @default(cuid())
+  languagePairId String      @map("language_pair_id")
+  status         DraftStatus @default(PENDING)
+  /// 생성 요청 주제 (예: '쇼핑')
+  topic          String
+  /// 생성된 스킬(레슨·문제 포함) JSON — @ted/shared DraftSkill 형태
+  payload        Json
+  /// 생성 모델 ID (mock이면 'mock')
+  model          String
+  /// 검수 메모 (반려 사유 등)
+  reviewNote     String?     @map("review_note")
+  /// 발행된 Skill.id (PUBLISHED일 때)
+  publishedSkillId String?   @map("published_skill_id")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status])
+  @@map("content_drafts")
+}
+
 /// 주간 리그 참가 기록 (주 시작일 + 사용자 단위)
 model LeagueEntry {
   weekStart DateTime   @map("week_start") @db.Date

@@ -5,6 +5,7 @@
   "description": "Duolingo 스타일 게임화 다국어 학습 앱 (모바일 퍼스트)",
   "scripts": {
     "mobile": "pnpm --filter mobile start",
+    "admin": "pnpm --filter admin dev",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",

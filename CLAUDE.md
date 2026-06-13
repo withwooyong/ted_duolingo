@@ -13,6 +13,7 @@ Duolingo 스타일의 게임화 다국어 학습 앱 ("Ted Duolingo"). 초보자
 ```bash
 pnpm install          # 전체 워크스페이스 설치 (.npmrc: node-linker=hoisted — Expo 필수)
 pnpm mobile           # Expo dev 서버 (= pnpm --filter mobile start)
+pnpm admin            # Admin 웹 (포트 3100, apps/admin/.env 필요 — README 참조)
 pnpm typecheck        # 전체 패키지 tsc --noEmit
 pnpm lint             # mobile은 expo lint, 나머지는 typecheck로 대체
 pnpm db:generate      # Prisma 클라이언트 생성 (typecheck 전 필요)
@@ -34,6 +35,7 @@ supabase stop         # 중지
 pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supabase-js로 직접 DB/Auth 접근, RLS로 보호.
 
 - `apps/mobile/` — Expo SDK 56, Expo Router(파일 기반, `src/app/`), NativeWind(Tailwind), Zustand(로컬 상태) + TanStack Query(서버 상태) 분리 원칙
+- `apps/admin/` — **Hono SSR 내부 도구 (React 없음 — D18**: Expo hoisted node_modules에서 React 중복 회피). AI 생성(Claude 구조화 출력, 키 없으면 모의 생성) → content_drafts → 검수 → 발행. Prisma 직접 연결(RLS 우회)이므로 로컬 전용. e2e: `apps/admin/e2e/admin_flow.py`
 - `packages/shared/` (`@ted/shared`) — 도메인 타입과 게임화 상수의 단일 소스. **문제 유형별 payload는 `ExercisePayload` 구별 유니온**으로 정의되어 DB JSON(`Exercise.options`)과 앱 컴포넌트가 공유
 - `packages/db/` (`@ted/db`) — Prisma 스키마(테이블만)와 시드. `Profile.id`는 Supabase `auth.users.id`(UUID)와 1:1
 - `supabase/policies/` — **RLS 정책·트리거는 Prisma가 관리 못 하므로 SQL로 별도 관리.** `supabase/migrations/`에 두면 `supabase start`가 Prisma 테이블 생성 전에 자동 적용해 실패하므로 **반드시 policies/에 둔다.** 테이블 변경 시 RLS 정책도 함께 검토할 것. 가입 시 `handle_new_user` 트리거가 profiles 행을 자동 생성
@@ -43,7 +45,7 @@ pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supab
 
 ```bash
 cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --file ../../supabase/policies/0001_rls_and_triggers.sql
-# policies/ 아래 SQL은 번호 순서대로 전부 적용 (0002: Phase 2 리그·배지 정책)
+# policies/ 아래 SQL은 번호 순서대로 전부 적용 (0002: 리그·배지, 0003: content_drafts API 차단)
 ```
 
 주의할 함정들:
