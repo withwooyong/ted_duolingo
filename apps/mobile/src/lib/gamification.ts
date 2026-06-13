@@ -4,12 +4,16 @@
  * "게임화 수치 서버 검증은 Phase 2 Edge Function으로 이전" 참조).
  */
 import {
+  INITIAL_REVIEW_STATE,
   LEAGUE_COHORT_SIZE,
+  nextReviewDue,
   resolveLeagueOutcome,
+  sm2Update,
   weekStartDate,
   type BadgeKey,
   type LeagueTier,
   type ProfileDto,
+  type ReviewState,
 } from '@ted/shared';
 import * as Crypto from 'expo-crypto';
 
@@ -51,6 +55,54 @@ export async function awardBadges(userId: string, keys: BadgeKey[]): Promise<Awa
   if (insertErr) throw insertErr;
 
   return fresh.map((b) => ({ key: b.key as BadgeKey, title: b.title, icon: b.icon }));
+}
+
+/**
+ * SM-2 복습 상태 upsert — 레슨·복습에서 푼 문제들의 다음 복습 간격을 갱신한다.
+ * 각 문제의 직전 상태를 읽어 sm2Update로 다음 상태를 계산하고 (사용자, 문제) 키로 덮어쓴다.
+ * 게임화 수치와 마찬가지로 클라이언트 직접 쓰기 — 서버 검증은 클라우드 전환 시 (RLS 0004 주석).
+ */
+export async function upsertReviewStates(
+  userId: string,
+  languagePairId: string,
+  history: { exerciseId: string; isCorrect: boolean }[],
+): Promise<void> {
+  if (history.length === 0) return;
+  const ids = history.map((h) => h.exerciseId);
+
+  const { data: prev, error: prevErr } = await supabase
+    .from('user_review_state')
+    .select('exercise_id, repetitions, ease_factor, interval')
+    .eq('user_id', userId)
+    .in('exercise_id', ids);
+  if (prevErr) throw prevErr;
+
+  const prevMap = new Map(
+    (prev ?? []).map((r) => [
+      r.exercise_id as string,
+      { repetitions: r.repetitions, easeFactor: r.ease_factor, interval: r.interval } as ReviewState,
+    ]),
+  );
+  const now = Date.now();
+
+  const rows = history.map((h) => {
+    const next = sm2Update(prevMap.get(h.exerciseId) ?? INITIAL_REVIEW_STATE, h.isCorrect);
+    return {
+      user_id: userId,
+      exercise_id: h.exerciseId,
+      language_pair_id: languagePairId,
+      repetitions: next.repetitions,
+      ease_factor: next.easeFactor,
+      interval: next.interval,
+      due_at: new Date(nextReviewDue(next, now)).toISOString(),
+      updated_at: new Date(now).toISOString(),
+    };
+  });
+
+  const { error } = await supabase
+    .from('user_review_state')
+    .upsert(rows, { onConflict: 'user_id,exercise_id' });
+  if (error) throw error;
 }
 
 export interface EnsureLeagueResult {

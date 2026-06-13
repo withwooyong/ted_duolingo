@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_HEARTS, PERFECT_BONUS_XP } from './constants';
+import { MAX_HEARTS, PERFECT_BONUS_XP, SM2_DEFAULT_EASE, SM2_MIN_EASE } from './constants';
 import {
   consumeHeart,
   earnedBadgeKeys,
+  INITIAL_REVIEW_STATE,
   isPremiumActive,
   leagueDaysLeft,
   lessonXp,
   localDateString,
+  nextReviewDue,
   nextStreak,
   premiumExpiryDate,
   refillHearts,
   resolveLeagueOutcome,
+  sm2Update,
   weekStartDate,
 } from './logic';
 
@@ -260,5 +263,45 @@ describe('premiumExpiryDate', () => {
     const from = new Date('2026-06-13T00:00:00Z');
     premiumExpiryDate(from, 1);
     expect(from.toISOString()).toBe('2026-06-13T00:00:00.000Z');
+  });
+});
+
+describe('sm2Update', () => {
+  it('첫 정답: 반복 1, 간격 1일, EF는 약간 상승', () => {
+    const r = sm2Update(INITIAL_REVIEW_STATE, true);
+    expect(r.repetitions).toBe(1);
+    expect(r.interval).toBe(1);
+    expect(r.easeFactor).toBeCloseTo(SM2_DEFAULT_EASE + 0.1, 5);
+  });
+
+  it('연속 정답: 간격이 1 → 6 → round(interval*EF)로 확대', () => {
+    let r = sm2Update(INITIAL_REVIEW_STATE, true); // rep1, interval1
+    expect(r.interval).toBe(1);
+    r = sm2Update(r, true); // rep2, interval6
+    expect(r.repetitions).toBe(2);
+    expect(r.interval).toBe(6);
+    r = sm2Update(r, true); // rep3, interval = round(6 * EF)
+    expect(r.repetitions).toBe(3);
+    expect(r.interval).toBe(Math.round(6 * r.easeFactor));
+    expect(r.interval).toBeGreaterThan(6);
+  });
+
+  it('오답: 반복 0으로 리셋, 간격 1일, EF 하향', () => {
+    const grown = sm2Update(sm2Update(INITIAL_REVIEW_STATE, true), true); // rep2
+    const r = sm2Update(grown, false);
+    expect(r.repetitions).toBe(0);
+    expect(r.interval).toBe(1);
+    expect(r.easeFactor).toBeLessThan(grown.easeFactor);
+  });
+
+  it('EF는 SM2_MIN_EASE 아래로 내려가지 않는다', () => {
+    let r: typeof INITIAL_REVIEW_STATE = INITIAL_REVIEW_STATE;
+    for (let i = 0; i < 20; i++) r = sm2Update(r, false);
+    expect(r.easeFactor).toBe(SM2_MIN_EASE);
+  });
+
+  it('nextReviewDue는 기준 시각에 interval일(ms)을 더한다', () => {
+    const r = sm2Update(sm2Update(INITIAL_REVIEW_STATE, true), true); // interval 6
+    expect(nextReviewDue(r, T0)).toBe(T0 + 6 * 24 * 60 * 60 * 1000);
   });
 });

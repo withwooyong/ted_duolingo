@@ -64,3 +64,13 @@ export const SPEECH_LOCALES: Record<string, string> = { ko: 'ko-KR', en: 'en-US'
 /* ── 레슨 구성 (PLAN.md §3.1 — 5~8문제, 5분 이내) ── */
 export const LESSON_MIN_EXERCISES = 5;
 export const LESSON_MAX_EXERCISES = 8;
+
+/* ── 복습 (SM-2 간격 반복, PLAN.md §8 Phase 4) ── */
+/** 한 복습 세션의 최대 문제 수 (due 순으로 채운다) */
+export const REVIEW_BATCH_SIZE = 10;
+/** 복습 세션 전부 정답 시 최대 보상 XP — 정답 비율에 비례 (총합·총 XP에만 반영, 주간 리그·일일 목표 제외) */
+export const REVIEW_XP = 5;
+/** SM-2 용이도 계수 하한 (표준값) */
+export const SM2_MIN_EASE = 1.3;
+/** SM-2 용이도 계수 초기값 (표준값) */
+export const SM2_DEFAULT_EASE = 2.5;

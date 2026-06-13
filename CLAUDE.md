@@ -26,7 +26,7 @@ supabase stop         # 중지
 
 개발은 로컬 Supabase 기준 (`.env`들은 로컬 기본값, gitignore 대상). 처음 띄울 때 순서: `supabase start` → `pnpm db:migrate` → RLS SQL 수동 적용(아래) → `pnpm db:seed`.
 
-테스트: `pnpm test` (shared의 vitest — 게임화 로직). e2e는 `apps/mobile/e2e/learning_loop.py` (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조).
+테스트: `pnpm test` (shared의 vitest — 게임화·SM-2 로직). e2e는 `apps/mobile/e2e/learning_loop.py`(학습 루프 62체크)와 `apps/mobile/e2e/review_loop.py`(SM-2 복습 9체크 — psql로 due_at 백데이트) (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조).
 
 테스트 프레임워크는 아직 없음 (Phase 1에서 도입 예정).
 
@@ -45,7 +45,7 @@ pnpm monorepo. 백엔드 서버 없음 — **Supabase only** (D12): 앱이 supab
 
 ```bash
 cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --file ../../supabase/policies/0001_rls_and_triggers.sql
-# policies/ 아래 SQL은 번호 순서대로 전부 적용 (0002: 리그·배지, 0003: content_drafts API 차단)
+# policies/ 아래 SQL은 번호 순서대로 전부 적용 (0002: 리그·배지, 0003: content_drafts API 차단, 0004: 복습 상태 본인 행)
 ```
 
 주의할 함정들:
@@ -67,6 +67,7 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 - **Freemium 경계**: 무료는 언어 1개·하트 제한·광고 포함 (PLAN.md §3.4). 구독은 mock 결제(D16) — `hooks/use-premium.ts`가 profiles의 `is_premium`·`premium_expires_at`을 직접 갱신, RevenueCat 전환 시 이 훅만 교체. 광고는 `components/ad-banner.tsx` placeholder
 - **활성 학습 언어쌍은 user_languages.is_active 기준 1개** (D17) — 스킬 트리·홈 배너·TTS 로케일이 이를 따른다. 전환·추가는 `hooks/use-languages.ts` + `/languages` 화면 (무료 한도 초과 시 페이월로)
 - **게임화 수치의 서버 측 검증(Edge Function)은 Phase 2로 미룸** — MVP는 클라이언트가 직접 update (RLS 주석 참조)
+- **SM-2 복습**: 레슨·복습 풀이마다 `lib/gamification.ts`의 `upsertReviewStates`가 문제별 `UserReviewState`(SM-2 순수 로직은 `@ted/shared` `sm2Update`)를 갱신. 홈은 `useDueReviewCount`로 due 배너 표시, `/review`는 due 문제(활성 언어쌍·due 순 최대 `REVIEW_BATCH_SIZE`)를 레슨과 같은 컴포넌트로 재생. 복습 XP는 총합만·하트 무소모 (D19). 완료 화면은 세션 refetch보다 우선 렌더(빈 세션으로 가려지지 않게), 진입은 홈 push라 완료 시 `router.back()`
 
 ## 개발 원칙
 

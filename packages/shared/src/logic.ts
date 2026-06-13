@@ -12,6 +12,8 @@ import {
   LEAGUE_TIERS,
   MAX_HEARTS,
   PERFECT_BONUS_XP,
+  SM2_DEFAULT_EASE,
+  SM2_MIN_EASE,
 } from './constants';
 import type { BadgeKey, LeagueTier } from './types';
 
@@ -162,4 +164,51 @@ export function earnedBadgeKeys(p: BadgeProgress): BadgeKey[] {
   if (p.perfectLesson) keys.push('perfect_lesson');
   if (p.leaguePromoted) keys.push('league_promote');
   return keys;
+}
+
+/* ── SM-2 간격 반복 복습 (PLAN.md §8 Phase 4) ───────────────────
+ * 문제별 복습 상태를 유지하고, 정/오답에 따라 다음 복습 간격을 정한다.
+ * binary 채점(정/오답)이라 표준 SM-2의 quality를 정답=5·오답=2로 매핑한다. */
+
+const DAY_MS_REVIEW = 24 * 60 * 60 * 1000;
+
+export interface ReviewState {
+  /** 연속 정답 횟수 (오답 시 0으로 리셋) */
+  repetitions: number;
+  /** 용이도 계수 (>= SM2_MIN_EASE) */
+  easeFactor: number;
+  /** 다음 복습까지 간격(일) */
+  interval: number;
+}
+
+/** 한 번도 풀지 않은 문제의 복습 상태 초기값 */
+export const INITIAL_REVIEW_STATE: ReviewState = {
+  repetitions: 0,
+  easeFactor: SM2_DEFAULT_EASE,
+  interval: 0,
+};
+
+/**
+ * SM-2 갱신 — 한 번의 정/오답으로 다음 복습 상태를 계산한다.
+ * - 정답(q=5): repetitions 증가, 간격 1일 → 6일 → interval*EF 순으로 확대
+ * - 오답(q=2): repetitions 리셋, 다음날(1일) 재복습. EF는 표준대로 하향 후 하한 적용
+ */
+export function sm2Update(state: ReviewState, isCorrect: boolean): ReviewState {
+  const q = isCorrect ? 5 : 2;
+  const easeFactor = Math.max(
+    SM2_MIN_EASE,
+    state.easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)),
+  );
+  if (q < 3) {
+    return { repetitions: 0, easeFactor, interval: 1 };
+  }
+  const repetitions = state.repetitions + 1;
+  const interval =
+    repetitions === 1 ? 1 : repetitions === 2 ? 6 : Math.round(state.interval * easeFactor);
+  return { repetitions, easeFactor, interval };
+}
+
+/** 다음 복습 예정 시각(epoch ms) — 기준 시각 + interval일 */
+export function nextReviewDue(state: ReviewState, from: number): number {
+  return from + state.interval * DAY_MS_REVIEW;
 }

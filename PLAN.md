@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v0.5 (Phase 3 Freemium·언어쌍 구현 결정 D16·D17 반영) | 2026-06-13
+> v0.6 (Phase 4 SM-2 복습 — 결정 D19 반영) | 2026-06-13
 
 ---
 
@@ -36,6 +36,7 @@
 | D16 | 구독 결제 | **로컬은 mock 결제** (즉시 성공, profiles에 만료일 기록) — RevenueCat/IAP 실연동은 클라우드 전환 + EAS 빌드 시. 가격(월 9,900 / 연 79,000)은 임시값, 스토어 제출 전 확정 |
 | D17 | 두 번째 언어쌍 | **ko→ja** — 활성 언어쌍은 user_languages.is_active 기준 1개, 전환은 클라이언트. 무료는 1개(추가는 Premium) |
 | D18 | Admin 스택 | **Hono SSR(React 없음) + Prisma 직접 연결** — Expo hoisted node_modules의 React 중복 회피. AI 생성은 Claude(`claude-opus-4-8`) 구조화 출력, 키 없으면 모의 생성. 발행 전 `validateDraftSkill` 강제 |
+| D19 | SM-2 복습 | **문제별 전용 상태 테이블 `UserReviewState`**(이력 테이블에서 재계산 대신 영속). binary 채점→quality(정답5·오답2) 매핑, 활성 언어쌍 필터용 `language_pair_id` 비정규화. 복습 XP는 총합(profile.xp)에만 반영(주간 리그·일일 목표 제외)·하트 무소모. 서버 검증은 클라우드 전환 시 Edge Function으로 |
 
 ### 1.3 목표
 
@@ -243,7 +244,12 @@ UserProgress
 
 UserExerciseHistory
   ├── userId, exerciseId, answeredAt, isCorrect
-  └── (SM-2 복습용, Phase 2)
+  └── (정오답 원장 — 감사/통계용)
+
+UserReviewState (SM-2 간격 반복, Phase 4)
+  ├── userId, exerciseId, languagePairId(비정규화)
+  ├── repetitions, easeFactor, interval, dueAt
+  └── (사용자×문제 1행 — due_at <= now 이면 복습 대상)
 
 Badge
   ├── id, title, condition, icon
@@ -267,6 +273,7 @@ League
   profile            프로필·배지·설정
 /lesson/[id]         레슨 플레이
 /lesson/[id]/complete 레슨 완료
+/review              SM-2 복습 세션 (due 문제 — 홈 복습 배너로 진입)
 /premium             구독 업그레이드
 /settings            설정
 ```
@@ -313,7 +320,7 @@ League
 
 ### Phase 4 — 고도화
 
-- [ ] SM-2 복습 알고리즘
+- [x] SM-2 복습 알고리즘 (간격 반복 — 레슨·복습 풀이마다 문제별 상태 갱신, 홈 복습 배너 + `/review` 세션. 복습 XP는 총합에만 반영·하트 무소모. e2e 9개 체크)
 - [ ] Shadowing (STT)
 - [ ] 오프라인 모드
 - [ ] Web/PWA (선택)

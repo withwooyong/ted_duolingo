@@ -12,7 +12,12 @@ import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
 
 import { useProfile } from '@/hooks/use-profile';
-import { awardBadges, ensureLeagueEntry, type AwardedBadge } from '@/lib/gamification';
+import {
+  awardBadges,
+  ensureLeagueEntry,
+  upsertReviewStates,
+  type AwardedBadge,
+} from '@/lib/gamification';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/stores/auth';
 
@@ -147,6 +152,17 @@ export function useCompleteLesson() {
           })),
         );
         if (historyErr) throw historyErr;
+
+        // SM-2 복습 상태 갱신 — 언어쌍은 레슨→스킬에서 조회 (복습 화면의 활성 언어쌍 필터용)
+        const { data: lessonRow, error: lessonErr } = await supabase
+          .from('lessons')
+          .select('skills(language_pair_id)')
+          .eq('id', result.lessonId)
+          .single();
+        if (lessonErr) throw lessonErr;
+        const pairId = (lessonRow.skills as unknown as { language_pair_id: string })
+          .language_pair_id;
+        await upsertReviewStates(userId, pairId, history);
       }
 
       const today = localDateString(new Date());
@@ -194,6 +210,7 @@ export function useCompleteLesson() {
       queryClient.invalidateQueries({ queryKey: ['league'] });
       queryClient.invalidateQueries({ queryKey: ['badges'] });
       queryClient.invalidateQueries({ queryKey: ['lessons-done'] });
+      queryClient.invalidateQueries({ queryKey: ['review-count'] });
     },
   });
 }

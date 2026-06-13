@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { useDailyXp, useHearts } from '@/hooks/use-game';
 import { useUserLanguages } from '@/hooks/use-onboarding';
 import { useProfile } from '@/hooks/use-profile';
+import { useDueReviewCount } from '@/hooks/use-review';
 import { useSkillTree, type SkillNode } from '@/hooks/use-skill-tree';
 
 /** 홈 — 스킬 트리 (프로토타입 prototype/index.html 디자인 기준) */
@@ -14,6 +15,7 @@ export default function HomeScreen() {
   const { data: dailyXp } = useDailyXp();
   const { data: languages, isLoading: langLoading } = useUserLanguages();
   const { data: tree, isLoading: treeLoading } = useSkillTree();
+  const { data: dueReviews } = useDueReviewCount();
 
   // 학습 언어 미등록 → 온보딩 (PLAN.md §4)
   if (!langLoading && languages && languages.length === 0) {
@@ -70,6 +72,18 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* 복습 배너 — due 문제가 있을 때만 (SM-2 간격 반복) */}
+      {!!dueReviews && dueReviews > 0 && (
+        <Pressable
+          className="mx-5 mt-3 flex-row items-center justify-between rounded-2xl border-2 border-grape bg-grape/10 px-4 py-3 active:opacity-80"
+          onPress={() => router.push('/review')}
+          testID="review-banner"
+        >
+          <Text className="text-sm font-extrabold text-grape">🔄 복습할 문제 {dueReviews}개</Text>
+          <Text className="text-sm font-extrabold text-grape">복습하기 ▶</Text>
+        </Pressable>
+      )}
+
       {/* 단원 배너 */}
       <View className="mx-5 mt-4 rounded-2xl bg-brand p-4">
         <Text className="text-xs font-bold text-white/80">1단원</Text>
@@ -94,8 +108,10 @@ export default function HomeScreen() {
                   Alert.alert('🔒 잠긴 스킬', '이전 스킬을 먼저 완료하세요.');
                 } else if (skill.nextLesson) {
                   startLesson(skill.nextLesson.id);
+                } else if (dueReviews && dueReviews > 0) {
+                  router.push('/review');
                 } else {
-                  Alert.alert('✓ 완료한 스킬', '복습 기능은 곧 추가돼요!');
+                  Alert.alert('✓ 완료한 스킬', '복습할 문제는 간격을 두고 다시 나와요. 곧 복습으로 만나요!');
                 }
               }}
             />
