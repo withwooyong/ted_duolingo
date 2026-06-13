@@ -26,7 +26,7 @@ supabase stop         # 중지
 
 개발은 로컬 Supabase 기준 (`.env`들은 로컬 기본값, gitignore 대상). 처음 띄울 때 순서: `supabase start` → `pnpm db:migrate` → RLS SQL 수동 적용(아래) → `pnpm db:seed`.
 
-테스트: `pnpm test` (shared의 vitest — 게임화·SM-2 로직). e2e는 `apps/mobile/e2e/learning_loop.py`(학습 루프 62체크)와 `apps/mobile/e2e/review_loop.py`(SM-2 복습 9체크 — psql로 due_at 백데이트) (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조).
+테스트: `pnpm test` (shared의 vitest — 게임화·SM-2·Shadowing 채점 로직). e2e는 `apps/mobile/e2e/learning_loop.py`(학습 루프 67체크 — Shadowing 포함)와 `apps/mobile/e2e/review_loop.py`(SM-2 복습 9체크 — psql로 due_at 백데이트) (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조). Shadowing은 `window.__mockShadowTranscript`로 STT 인식 결과를 주입한다.
 
 테스트 프레임워크는 아직 없음 (Phase 1에서 도입 예정).
 
@@ -61,13 +61,14 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 
 ## 핵심 도메인 개념
 
-- **문제 유형 5종** (enum 값 고정): `LISTEN_SELECT`, `FILL_BLANK`, `MATCH_PAIRS`, `ORDER_WORDS`, `COMPREHENSION_MCQ`. 각각 별도 컴포넌트로 구현. Phase 2에 Shadowing(STT)·Free Translation 추가
+- **문제 유형 6종** (enum 값 고정): `LISTEN_SELECT`, `FILL_BLANK`, `MATCH_PAIRS`, `ORDER_WORDS`, `COMPREHENSION_MCQ`, `SHADOW_SPEAK`. 각각 별도 컴포넌트로 구현. Free Translation(AI 채점)은 추후 추가
 - **콘텐츠 계층**: LanguagePair → Skill → Lesson(5~8문제) → Exercise. 시드의 LISTEN/MCQ 정답은 항상 `options[0]` — 보기 섞기는 앱 표시 시점에 한다
 - **게임화 규칙 수치는 `@ted/shared/constants.ts`가 단일 소스** (하트 5개·시간당 충전, 주간 리그 10명 코호트·상하위 3명 승급/강등, 레슨 10XP + 퍼펙트 5XP). 수치 변경 시 PLAN.md도 갱신
 - **Freemium 경계**: 무료는 언어 1개·하트 제한·광고 포함 (PLAN.md §3.4). 구독은 mock 결제(D16) — `hooks/use-premium.ts`가 profiles의 `is_premium`·`premium_expires_at`을 직접 갱신, RevenueCat 전환 시 이 훅만 교체. 광고는 `components/ad-banner.tsx` placeholder
 - **활성 학습 언어쌍은 user_languages.is_active 기준 1개** (D17) — 스킬 트리·홈 배너·TTS 로케일이 이를 따른다. 전환·추가는 `hooks/use-languages.ts` + `/languages` 화면 (무료 한도 초과 시 페이월로)
 - **게임화 수치의 서버 측 검증(Edge Function)은 Phase 2로 미룸** — MVP는 클라이언트가 직접 update (RLS 주석 참조)
 - **SM-2 복습**: 레슨·복습 풀이마다 `lib/gamification.ts`의 `upsertReviewStates`가 문제별 `UserReviewState`(SM-2 순수 로직은 `@ted/shared` `sm2Update`)를 갱신. 홈은 `useDueReviewCount`로 due 배너 표시, `/review`는 due 문제(활성 언어쌍·due 순 최대 `REVIEW_BATCH_SIZE`)를 레슨과 같은 컴포넌트로 재생. 복습 XP는 총합만·하트 무소모 (D19). 완료 화면은 세션 refetch보다 우선 렌더(빈 세션으로 가려지지 않게), 진입은 홈 push라 완료 시 `router.back()`
+- **Shadowing(`SHADOW_SPEAK`)**: 문장을 TTS로 들려주고 따라 말하면 STT로 채점 (D20). 채점은 순수 함수 `@ted/shared` `scoreShadowing`(정답 단어 포함률) ≥ `SHADOW_PASS_RATIO`(0.6) — `checkers.ts`가 transcript를 답으로 받아 처리하므로 하트·SM-2는 다른 유형과 동일. STT는 `lib/speech-recognition.ts` 추상화: **웹만 Web Speech API 실연동**, 네이티브는 `createShadowRecognizer`가 null→컴포넌트가 "직접 확인" fallback (실 네이티브 STT는 EAS 빌드 시 `@react-native-voice/voice` 등을 이 파일에 연결). `value`(transcript) 변동에 대응해 컴포넌트는 문제별 `key`로 remount(effect 내 setState 금지 — React Compiler 린트)
 
 ## 개발 원칙
 

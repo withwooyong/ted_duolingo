@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v0.6 (Phase 4 SM-2 복습 — 결정 D19 반영) | 2026-06-13
+> v0.7 (Phase 4 Shadowing STT — 결정 D20 반영) | 2026-06-13
 
 ---
 
@@ -24,7 +24,7 @@
 | D4 | 콘텐츠 | **AI 반자동 + 사람 검수** |
 | D5 | 플랫폼 | **Mobile first** (iOS/Android) |
 | D6 | 게임화 | **풀** (XP, 스트릭, 하트, 리그, 배지) |
-| D7 | 문제 유형 | **Duolingo 5종** |
+| D7 | 문제 유형 | **Duolingo 5종 + Shadowing(D20) = 6종** |
 | D8 | 기술 스택 | **React Native (Expo) + 백엔드** |
 | D9 | 수익 모델 | **Freemium** (MVP부터) |
 | D10 | 일정 | **유연 — 품질 우선** |
@@ -37,6 +37,7 @@
 | D17 | 두 번째 언어쌍 | **ko→ja** — 활성 언어쌍은 user_languages.is_active 기준 1개, 전환은 클라이언트. 무료는 1개(추가는 Premium) |
 | D18 | Admin 스택 | **Hono SSR(React 없음) + Prisma 직접 연결** — Expo hoisted node_modules의 React 중복 회피. AI 생성은 Claude(`claude-opus-4-8`) 구조화 출력, 키 없으면 모의 생성. 발행 전 `validateDraftSkill` 강제 |
 | D19 | SM-2 복습 | **문제별 전용 상태 테이블 `UserReviewState`**(이력 테이블에서 재계산 대신 영속). binary 채점→quality(정답5·오답2) 매핑, 활성 언어쌍 필터용 `language_pair_id` 비정규화. 복습 XP는 총합(profile.xp)에만 반영(주간 리그·일일 목표 제외)·하트 무소모. 서버 검증은 클라우드 전환 시 Edge Function으로 |
+| D20 | Shadowing(STT) | **6번째 문제 유형 `SHADOW_SPEAK`** — 기존 5종·레슨·SM-2 복습에 그대로 편입(별도 모드 아님). 채점은 정확 일치 대신 **단어 포함률(recall) ≥ 0.6**(초보자 관대, STT가 구두점·억양을 흘리므로). STT는 **추상화 레이어**(`lib/speech-recognition.ts`): 웹은 Web Speech API 실연동, 네이티브 실 STT는 EAS 커스텀 빌드 필요라 현재 "직접 확인" fallback(D16/OAuth와 동일한 클라우드 경계). e2e(웹)는 `window.__mockShadowTranscript`로 인식 결과 주입 |
 
 ### 1.3 목표
 
@@ -74,13 +75,13 @@
 | **온보딩** | 모국어·학습 언어 선택, 일일 목표, 초급 레벨 설정 |
 | **스킬 트리 / 커리큘럼** | 단원별 레슨 경로 (Duolingo 스타일) |
 | **레슨 플레이** | 5~8문제, 5분 이내 |
-| **문제 유형 5종** | 아래 3.2 참조 |
+| **문제 유형 6종** | 아래 3.2 참조 (5종 + Shadowing) |
 | **풀 게임화** | XP, 스트릭, 하트, 리그, 배지, 일일 목표 |
 | **진행 저장** | 레슨·스킬·언어별 진행률 |
 | **Freemium** | 무료(하트 제한) + Premium(무제한 하트, 광고 제거) |
 | **프로필** | 통계, 스트릭, 배지, 리그 순위 |
 
-### 3.2 문제 유형 (Duolingo 5종)
+### 3.2 문제 유형 (Duolingo 6종)
 
 ```
 1. Listen & Select    — 오디오 듣고 올바른 문장/단어 선택
@@ -88,10 +89,10 @@
 3. Match Pairs        — 단어 ↔ 번역 매칭
 4. Order the Words    — 단어 배열로 문장 완성
 5. Comprehension MCQ  — 문장·대화 이해 객관식
+6. Shadowing (Speak)  — 문장을 듣고 따라 말하면 STT로 채점 (Phase 4, D20)
 ```
 
-Phase 2 추가:
-- Shadowing (발음 따라하기, STT)
+추가 예정:
 - Free Translation (자유 번역, AI 채점)
 
 ### 3.3 게임화 (MVP 전체 포함)
@@ -321,7 +322,7 @@ League
 ### Phase 4 — 고도화
 
 - [x] SM-2 복습 알고리즘 (간격 반복 — 레슨·복습 풀이마다 문제별 상태 갱신, 홈 복습 배너 + `/review` 세션. 복습 XP는 총합에만 반영·하트 무소모. e2e 9개 체크)
-- [ ] Shadowing (STT)
+- [x] Shadowing (STT) — 6번째 문제 유형 `SHADOW_SPEAK`. TTS 참조 재생 → 따라 말하기 → 단어 포함률 채점(임계 0.6). STT 추상화: 웹 Web Speech API 실연동, 네이티브 실 STT는 EAS 빌드 시 (현재 fallback). 레슨·복습 공통 (D20)
 - [ ] 오프라인 모드
 - [ ] Web/PWA (선택)
 

@@ -19,6 +19,7 @@ enum ExerciseType {
   MATCH_PAIRS
   ORDER_WORDS
   COMPREHENSION_MCQ
+  SHADOW_SPEAK
 }
 
 enum LeagueTier {

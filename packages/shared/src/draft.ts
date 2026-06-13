@@ -103,6 +103,9 @@ function validateExercise(ex: DraftExercise, where: string): string[] {
       if ((p.options?.length ?? 0) < 2) errors.push(`${where}: 보기가 2개 이상 필요해요`);
       if (p.answerIndex !== 0) errors.push(`${where}: 정답은 options[0]이어야 해요 (answerIndex=0)`);
       break;
+    case 'SHADOW_SPEAK':
+      if (!p.text?.trim()) errors.push(`${where}: 따라 말할 문장(text)이 비어 있어요`);
+      break;
   }
   return errors;
 }

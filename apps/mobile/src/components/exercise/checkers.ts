@@ -1,10 +1,11 @@
-import type { ExercisePayload } from '@ted/shared';
+import { SHADOW_PASS_RATIO, scoreShadowing, type ExercisePayload } from '@ted/shared';
 
 /**
  * 답안 채점 — 모든 유형의 답안을 문자열로 통일.
  * LISTEN_SELECT/COMPREHENSION_MCQ: 선택한 보기 텍스트
  * FILL_BLANK: 선택한 단어
  * ORDER_WORDS: 공백으로 join한 문장
+ * SHADOW_SPEAK: STT 인식 결과(transcript) — 단어 포함률이 임계 이상이면 정답
  * MATCH_PAIRS: 컴포넌트가 완료 시 자동 제출 (항상 정답)
  */
 export function checkAnswer(payload: ExercisePayload, answer: string): boolean {
@@ -17,6 +18,8 @@ export function checkAnswer(payload: ExercisePayload, answer: string): boolean {
       return answer === payload.answer;
     case 'ORDER_WORDS':
       return answer === payload.answer;
+    case 'SHADOW_SPEAK':
+      return scoreShadowing(payload.text, answer) >= SHADOW_PASS_RATIO;
     case 'MATCH_PAIRS':
       return true;
   }
@@ -32,6 +35,8 @@ export function correctAnswerText(payload: ExercisePayload): string | null {
       return payload.answer;
     case 'ORDER_WORDS':
       return payload.answer;
+    case 'SHADOW_SPEAK':
+      return payload.text;
     case 'MATCH_PAIRS':
       return null;
   }

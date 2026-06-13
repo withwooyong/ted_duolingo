@@ -14,6 +14,7 @@ import {
   premiumExpiryDate,
   refillHearts,
   resolveLeagueOutcome,
+  scoreShadowing,
   sm2Update,
   weekStartDate,
 } from './logic';
@@ -303,5 +304,37 @@ describe('sm2Update', () => {
   it('nextReviewDue는 기준 시각에 interval일(ms)을 더한다', () => {
     const r = sm2Update(sm2Update(INITIAL_REVIEW_STATE, true), true); // interval 6
     expect(nextReviewDue(r, T0)).toBe(T0 + 6 * 24 * 60 * 60 * 1000);
+  });
+});
+
+describe('scoreShadowing', () => {
+  it('정확히 같은 문장은 1.0', () => {
+    expect(scoreShadowing('I like coffee', 'I like coffee')).toBe(1);
+  });
+
+  it('구두점·대소문자 차이는 무시한다', () => {
+    expect(scoreShadowing('I like coffee.', 'i, like COFFEE!')).toBe(1);
+  });
+
+  it('일부 단어만 맞으면 포함률을 돌려준다', () => {
+    // 정답 4단어 중 3단어 포함 → 0.75
+    expect(scoreShadowing('I want a coffee', 'I want coffee')).toBeCloseTo(0.75);
+  });
+
+  it('빈 인식 결과는 0', () => {
+    expect(scoreShadowing('hello world', '')).toBe(0);
+  });
+
+  it('빈 정답은 0 (0 나눗셈 방지)', () => {
+    expect(scoreShadowing('', 'anything')).toBe(0);
+  });
+
+  it('인식 결과에 군더더기가 섞여도 정답 단어 포함률만 본다', () => {
+    expect(scoreShadowing('thank you', 'um thank you very much')).toBe(1);
+  });
+
+  it('중복 단어는 1:1로만 매칭한다', () => {
+    // 정답에 'good' 2개, 인식엔 1개 → 1/2
+    expect(scoreShadowing('good good', 'good')).toBe(0.5);
   });
 });

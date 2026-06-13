@@ -46,6 +46,8 @@ with sync_playwright() as p:
     page.set_default_timeout(30000)
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
+    # SHADOW_SPEAK STT mock — 첫 인사 레슨의 따라 말하기 문제용 (lib/speech-recognition 참조)
+    page.add_init_script("window.__mockShadowTranscript = 'Nice to meet you';")
 
     print('1) 가입 + 온보딩(영어)')
     page.goto(BASE, timeout=180000)
@@ -62,7 +64,7 @@ with sync_playwright() as p:
     tid(page, 'goal-20').click()
     tid(page, 'onboarding-finish').click()
 
-    print('2) 첫 영어 레슨 (6문제 전부 정답)')
+    print('2) 첫 영어 레슨 (7문제 전부 정답)')
     page.wait_for_selector('[data-testid="continue-button"]', timeout=60000)
     tid(page, 'continue-button').click()
 
@@ -97,6 +99,12 @@ with sync_playwright() as p:
     page.get_by_text('Good morning!', exact=True).click()
     tid(page, 'check-button').click(); feedback_continue()
 
+    # 7번째: 따라 말하기 (STT mock 'Nice to meet you')
+    page.wait_for_selector('[data-testid="shadow-mic"]')
+    tid(page, 'shadow-mic').click()
+    page.wait_for_selector('[data-testid="shadow-result"]')
+    tid(page, 'check-button').click(); feedback_continue()
+
     print('3) 레슨 완료 → 홈')
     page.wait_for_selector('[data-testid="complete-title"]', timeout=30000)
     page.wait_for_timeout(1600)
@@ -112,10 +120,10 @@ with sync_playwright() as p:
     page.wait_for_selector('[data-testid="review-banner"]', timeout=30000)
     banner = tid(page, 'review-banner').inner_text()
     check('복습 배너 표시', tid(page, 'review-banner').count() == 1)
-    check('복습 배너: 6개', '6개' in banner)
+    check('복습 배너: 7개', '7개' in banner)
     shot(page, '01_home_banner')
 
-    print('5) 복습 세션 진입 → 6문제 (순서 무관 정답 처리)')
+    print('5) 복습 세션 진입 → 7문제 (순서 무관 정답 처리)')
     tid(page, 'review-banner').click()
     page.wait_for_selector('[data-testid="review-area"]', timeout=30000)
 
@@ -128,6 +136,13 @@ with sync_playwright() as p:
             for i in range(4):
                 tid(page, f'match-ko-{i}').click()
                 tid(page, f'match-en-{i}').click()
+            feedback_continue()
+            return
+        # SHADOW_SPEAK: 녹음(STT mock) 후 확인
+        if tid(page, 'shadow-mic').count() == 1:
+            tid(page, 'shadow-mic').click()
+            page.wait_for_selector('[data-testid="shadow-result"]')
+            tid(page, 'review-check-button').click()
             feedback_continue()
             return
         # LISTEN_SELECT: 두 듣기 문제 중 보이는 정답 클릭
@@ -147,14 +162,14 @@ with sync_playwright() as p:
         tid(page, 'review-check-button').click()
         feedback_continue()
 
-    for _ in range(6):
+    for _ in range(7):
         if tid(page, 'review-done').count() == 1:
             break
         answer_current()
 
     print('6) 복습 완료 화면')
     page.wait_for_selector('[data-testid="review-done"]', timeout=30000)
-    check('복습 완료: 6/6 정답', '6 / 6' in tid(page, 'review-score').inner_text())
+    check('복습 완료: 7/7 정답', '7 / 7' in tid(page, 'review-score').inner_text())
     check('복습 완료: +5 XP', '+5' in tid(page, 'review-xp').inner_text())
     shot(page, '02_review_done')
     tid(page, 'review-done-home').click()

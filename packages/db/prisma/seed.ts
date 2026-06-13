@@ -76,6 +76,12 @@ const mcq = (
   payload: { type: 'COMPREHENSION_MCQ', passage, question, options, answerIndex: 0 },
   explanation,
 });
+const shadow = (text: string, meaning: string, explanation: string): SeedExercise => ({
+  type: 'SHADOW_SPEAK',
+  prompt: '문장을 듣고 따라 말하세요',
+  payload: { type: 'SHADOW_SPEAK', text, meaning },
+  explanation,
+});
 
 /* ── 1단원: 기초 회화 (ko→en) ─────────────────────────────── */
 /* listen/mcq의 정답은 항상 options[0] — 저장 직전에 섞지 않고 앱에서 표시 시 섞는다 */
@@ -119,6 +125,11 @@ const UNIT_1: SeedSkill[] = [
             'Good morning!',
             ['Good morning!', 'Good night!', 'Goodbye!', 'Good luck!'],
             '"Good morning!" — 좋은 아침이에요!',
+          ),
+          shadow(
+            'Nice to meet you',
+            '만나서 반가워요',
+            '또박또박 따라 말해 보세요 — 인사의 기본 문장이에요.',
           ),
         ],
       },
@@ -201,6 +212,11 @@ const UNIT_1: SeedSkill[] = [
             'Can I have a menu, please?',
             ['Can I have a menu, please?', 'Can I have money, please?', 'Can I move a menu, please?', 'Can I have a melon, please?'],
             '"Can I have a menu, please?" — 메뉴판 좀 주시겠어요?',
+          ),
+          shadow(
+            'I would like a coffee',
+            '커피 한 잔 주세요',
+            '"would like"는 공손하게 주문할 때 쓰는 표현이에요.',
           ),
         ],
       },
@@ -333,6 +349,11 @@ const UNIT_1_JA: SeedSkill[] = [
             'ありがとうございます。',
             ['ありがとうございます。', 'すみませんでした。', 'おはようございます。', 'さようなら。'],
             '"ありがとうございます" — 감사합니다.',
+          ),
+          shadow(
+            'ありがとうございます',
+            '감사합니다',
+            '천천히 또박또박 따라 말해 보세요.',
           ),
         ],
       },

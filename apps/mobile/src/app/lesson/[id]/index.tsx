@@ -10,6 +10,7 @@ import { FillBlank } from '@/components/exercise/fill-blank';
 import { ListenSelect } from '@/components/exercise/listen-select';
 import { MatchPairs } from '@/components/exercise/match-pairs';
 import { OrderWords } from '@/components/exercise/order-words';
+import { ShadowSpeak } from '@/components/exercise/shadow-speak';
 import { useCompleteLesson, useHearts, useLoseHeart } from '@/hooks/use-game';
 import { useLessonExercises, useSkillTree } from '@/hooks/use-skill-tree';
 
@@ -19,6 +20,7 @@ const TYPE_LABELS: Record<ExerciseDto['type'], string> = {
   MATCH_PAIRS: '짝 맞추기',
   ORDER_WORDS: '단어 배열',
   COMPREHENSION_MCQ: '독해',
+  SHADOW_SPEAK: '따라 말하기',
 };
 
 interface PlayState {
@@ -195,6 +197,16 @@ export default function LessonScreen() {
         {exercise.payload.type === 'COMPREHENSION_MCQ' && (
           <ComprehensionMcq
             payload={exercise.payload}
+            value={answer}
+            onChange={setAnswer}
+            disabled={play.phase === 'feedback'}
+          />
+        )}
+        {exercise.payload.type === 'SHADOW_SPEAK' && (
+          <ShadowSpeak
+            key={exercise.id}
+            payload={exercise.payload}
+            targetLang={exercise.targetLang}
             value={answer}
             onChange={setAnswer}
             disabled={play.phase === 'feedback'}

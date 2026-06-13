@@ -7,6 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-13] Phase 4 — Shadowing (발음 따라하기 / STT)
+
+### Added
+- 6번째 문제 유형 `SHADOW_SPEAK` (D20) — 문장을 TTS로 들려주고 따라 말하면 STT로 채점. 기존 5종·레슨 플레이어·SM-2 복습에 그대로 편입
+- `@ted/shared` `scoreShadowing` — 단어 포함률(recall) 순수 채점(구두점·대소문자·억양 무시) + `SHADOW_PASS_RATIO`(0.6) 상수 + vitest 63개(+7)
+- `ShadowSpeakPayload` 타입 + Prisma `ExerciseType` enum 값 + 마이그레이션 `20260613045108_add_shadow_speak_exercise_type` (RLS 변경 불필요 — 기존 exercises/review_state 사용)
+- STT 추상화 `apps/mobile/src/lib/speech-recognition.ts` — 웹은 Web Speech API 실연동, 네이티브는 null→fallback (실 네이티브 STT는 EAS 빌드 시 연결). e2e용 `window.__mockShadowTranscript` 주입 지원
+- `components/exercise/shadow-speak.tsx` — TTS 참조 재생(🔊) + 녹음(🎤)→인식 결과·일치율 표시, STT 미지원 시 "직접 확인" fallback. 레슨·복습 양쪽에 렌더 분기(문제별 `key`로 remount)
+- 시드 — ko→en 2개·ko→ja 1개 Shadowing 문제 추가 (각 레슨 7문제 이내)
+
+### Changed
+- `checkers.ts`·`draft.ts`의 채점/검증 switch에 `SHADOW_SPEAK` 케이스 추가
+- e2e — `learning_loop.py` 62→67체크(Shadowing 2곳), `review_loop.py`는 due 6→7문제(첫 레슨에 Shadowing 포함)
+
+---
+
 ## [2026-06-13] Phase 4 — SM-2 간격 반복 복습
 
 ### Added

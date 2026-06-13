@@ -74,3 +74,7 @@ export const REVIEW_XP = 5;
 export const SM2_MIN_EASE = 1.3;
 /** SM-2 용이도 계수 초기값 (표준값) */
 export const SM2_DEFAULT_EASE = 2.5;
+
+/* ── Shadowing 발음 따라하기 (PLAN.md §3.2·§8 Phase 4) ── */
+/** STT 인식 결과가 정답 단어를 이 비율 이상 포함하면 통과 — 초보자 관대 채점 */
+export const SHADOW_PASS_RATIO = 0.6;

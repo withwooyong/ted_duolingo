@@ -3,13 +3,14 @@
  * DB 스키마(packages/db/prisma)와 모바일 앱이 공유한다.
  */
 
-/** 문제 유형 5종 (PLAN.md §3.2) — Prisma enum ExerciseType과 동일 값 */
+/** 문제 유형 6종 (PLAN.md §3.2) — Prisma enum ExerciseType과 동일 값 */
 export type ExerciseType =
   | 'LISTEN_SELECT'
   | 'FILL_BLANK'
   | 'MATCH_PAIRS'
   | 'ORDER_WORDS'
-  | 'COMPREHENSION_MCQ';
+  | 'COMPREHENSION_MCQ'
+  | 'SHADOW_SPEAK';
 
 /** 리그 티어 (PLAN.md §3.3 — Bronze → Diamond) */
 export type LeagueTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'SAPPHIRE' | 'DIAMOND';
@@ -66,12 +67,22 @@ export interface ComprehensionMcqPayload {
   answerIndex: number;
 }
 
+/** 발음 따라하기 — text를 TTS로 들려주고 사용자가 따라 말하면 STT로 채점 */
+export interface ShadowSpeakPayload {
+  type: 'SHADOW_SPEAK';
+  /** 따라 말할 문장 (TTS 재생·STT 채점 기준) */
+  text: string;
+  /** 뜻(원어) — 화면 보조 표시용, 채점에는 미사용 */
+  meaning?: string;
+}
+
 export type ExercisePayload =
   | ListenSelectPayload
   | FillBlankPayload
   | MatchPairsPayload
   | OrderWordsPayload
-  | ComprehensionMcqPayload;
+  | ComprehensionMcqPayload
+  | ShadowSpeakPayload;
 
 /* ── 조회용 DTO (앱 ↔ Supabase) ───────────────────────────────── */
 

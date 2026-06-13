@@ -212,3 +212,36 @@ export function sm2Update(state: ReviewState, isCorrect: boolean): ReviewState {
 export function nextReviewDue(state: ReviewState, from: number): number {
   return from + state.interval * DAY_MS_REVIEW;
 }
+
+/* ── Shadowing 발음 채점 (PLAN.md §3.2 — STT 인식 결과 vs 정답 문장) ──
+ * STT는 구두점·대소문자·억양을 흘리므로 정확 일치 대신 단어 포함률(recall)로 채점한다.
+ * 정답 문장의 각 단어가 인식 결과에 (중복 포함해) 들어 있으면 맞춘 것으로 본다. */
+
+/** 채점용 정규화 — 소문자·구두점 제거·공백 분리 (아포스트로피는 단어 일부로 유지) */
+function normalizeWords(s: string): string[] {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s']/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * 발음 따라하기 점수 — 정답 단어 중 인식 결과에 포함된 비율(0~1).
+ * 단어 중복은 1:1로만 매칭 (multiset 교집합 / 정답 단어 수).
+ */
+export function scoreShadowing(target: string, transcript: string): number {
+  const want = normalizeWords(target);
+  if (want.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const w of normalizeWords(transcript)) counts.set(w, (counts.get(w) ?? 0) + 1);
+  let matched = 0;
+  for (const w of want) {
+    const n = counts.get(w) ?? 0;
+    if (n > 0) {
+      matched++;
+      counts.set(w, n - 1);
+    }
+  }
+  return matched / want.length;
+}

@@ -30,6 +30,10 @@ with sync_playwright() as p:
     page.set_default_timeout(30000)
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
+    # SHADOW_SPEAK STT mock — Playwright는 실제 마이크 입력을 줄 수 없으므로
+    # 인식 결과를 window.__mockShadowTranscript로 주입 (lib/speech-recognition 참조).
+    # reload(step 12 goto) 후에도 유지되도록 add_init_script로 등록.
+    page.add_init_script("window.__mockShadowTranscript = 'Nice to meet you';")
 
     print('1) 로드 + 인증 화면')
     page.goto(BASE, timeout=180000)
@@ -65,7 +69,7 @@ with sync_playwright() as p:
     check('홈: 스킬 4개', all(tid(page, f'skill-{i}').count() == 1 for i in range(1, 5)))
     shot(page, '04_home')
 
-    print('5) 레슨 시작 → 문제 6개 (전부 정답)')
+    print('5) 레슨 시작 → 문제 7개 (전부 정답)')
     tid(page, 'continue-button').click()
 
     def feedback_continue(expect_correct=True):
@@ -115,6 +119,17 @@ with sync_playwright() as p:
     # 5-6 듣고 고르기: "Good morning!"
     page.wait_for_selector('[data-testid="speaker"]')
     page.get_by_text('Good morning!', exact=True).click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+
+    # 5-7 따라 말하기(SHADOW_SPEAK): "Nice to meet you" — STT mock 인식
+    page.wait_for_selector('[data-testid="shadow-mic"]')
+    shot(page, '09b_shadow')
+    tid(page, 'shadow-mic').click()  # mock transcript 'Nice to meet you' 인식
+    page.wait_for_selector('[data-testid="shadow-result"]')
+    result = tid(page, 'shadow-result').inner_text()
+    check('따라 말하기: 인식 결과 표시', 'Nice to meet you' in result)
+    check('따라 말하기: 일치율 100%', '100%' in result)
     tid(page, 'check-button').click()
     feedback_continue()
 
@@ -223,7 +238,7 @@ with sync_playwright() as p:
     check('홈: 이어하기 = 기본 인사', '기본 인사' in tid(page, 'continue-button').inner_text())
     shot(page, '19_home_ja')
 
-    print('15) 일본어 레슨 (6문제, Premium 하트 ∞)')
+    print('15) 일본어 레슨 (7문제, Premium 하트 ∞)')
     tid(page, 'continue-button').click()
     # 15-1 듣기: こんにちは。
     page.wait_for_selector('[data-testid="speaker"]')
@@ -256,6 +271,14 @@ with sync_playwright() as p:
     # 15-6 듣기: ありがとうございます。
     page.wait_for_selector('[data-testid="speaker"]')
     page.get_by_text('ありがとうございます。', exact=True).click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+    # 15-7 따라 말하기(ja): ありがとうございます
+    page.wait_for_selector('[data-testid="shadow-mic"]')
+    page.evaluate("window.__mockShadowTranscript = 'ありがとうございます'")
+    tid(page, 'shadow-mic').click()
+    page.wait_for_selector('[data-testid="shadow-result"]')
+    check('따라 말하기(ja): 일치율 100%', '100%' in tid(page, 'shadow-result').inner_text())
     tid(page, 'check-button').click()
     feedback_continue()
 
