@@ -12,6 +12,7 @@ import {
   LEAGUE_TIERS,
   MAX_HEARTS,
   PERFECT_BONUS_XP,
+  REVIEW_XP,
   SM2_DEFAULT_EASE,
   SM2_MIN_EASE,
 } from './constants';
@@ -68,6 +69,11 @@ export function nextStreak(lastStudyDate: string | null, today: string, current:
 /** 레슨 XP — 기본 보상 + 퍼펙트(전부 정답) 보너스 */
 export function lessonXp(xpReward: number, correct: number, total: number): number {
   return xpReward + (total > 0 && correct === total ? PERFECT_BONUS_XP : 0);
+}
+
+/** 복습 XP — 정답 비율에 비례한 REVIEW_XP(반올림). 총합에만 반영·하트 무소모 (D19). */
+export function reviewXp(correct: number, total: number): number {
+  return total > 0 ? Math.round((REVIEW_XP * correct) / total) : 0;
 }
 
 /** 로컬 기준 'YYYY-MM-DD' (스트릭·일일 목표는 사용자 로컬 날짜 기준) */

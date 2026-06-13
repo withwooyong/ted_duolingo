@@ -1,6 +1,6 @@
 /**
- * 오프라인 레슨 쓰기 큐(D22) — 오프라인에서 끝낸 레슨 입력을 영속 보관했다가
- * 온라인 복귀 시 SyncProcessor가 completeLessonWrite로 재실행한다.
+ * 오프라인 쓰기 큐(D22 레슨 · D24 복습) — 오프라인에서 끝낸 레슨·복습 입력을 영속 보관했다가
+ * 온라인 복귀 시 SyncProcessor가 completeLessonWrite·completeReviewWrite로 재실행한다.
  *
  * 절대값이 아닌 "의도(입력)"를 큐잉하므로 복귀 시 서버 최신 상태에 대고 재실행해도 충돌이 없다.
  * AsyncStorage에 영속(앱 재기동에도 보존), 항목마다 userId를 태깅해 사용자별로 필터한다
@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { CompleteLessonInput } from '@/lib/learning-writes';
+import type { CompleteReviewInput } from '@/lib/review-writes';
 
 export interface QueuedLesson {
   /** progressId — user_progress 행 id이자 재시도 멱등 키 */
@@ -24,11 +25,24 @@ export interface QueuedLesson {
   queuedAt: number;
 }
 
+export interface QueuedReview {
+  /** sessionId — user_review_session 행 id이자 재시도 멱등 키 */
+  id: string;
+  userId: string;
+  input: CompleteReviewInput;
+  /** 완료 시각(epoch ms) — SM-2 due를 학습 시점 기준으로 계산 */
+  completedAt: number;
+  queuedAt: number;
+}
+
 interface SyncQueueState {
   items: QueuedLesson[];
+  reviews: QueuedReview[];
   enqueue: (item: QueuedLesson) => void;
   remove: (id: string) => void;
-  /** 로그아웃·사용자 전환 시 해당 사용자 항목 제거 */
+  enqueueReview: (item: QueuedReview) => void;
+  removeReview: (id: string) => void;
+  /** 로그아웃·사용자 전환 시 해당 사용자 항목 제거 (레슨·복습 모두) */
   clearForUser: (userId: string) => void;
 }
 
@@ -36,10 +50,16 @@ export const useSyncQueue = create<SyncQueueState>()(
   persist(
     (set) => ({
       items: [],
+      reviews: [],
       enqueue: (item) => set((s) => ({ items: [...s.items, item] })),
       remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+      enqueueReview: (item) => set((s) => ({ reviews: [...s.reviews, item] })),
+      removeReview: (id) => set((s) => ({ reviews: s.reviews.filter((i) => i.id !== id) })),
       clearForUser: (userId) =>
-        set((s) => ({ items: s.items.filter((i) => i.userId !== userId) })),
+        set((s) => ({
+          items: s.items.filter((i) => i.userId !== userId),
+          reviews: s.reviews.filter((i) => i.userId !== userId),
+        })),
     }),
     {
       name: 'ted-sync-queue',
@@ -51,6 +71,13 @@ export const useSyncQueue = create<SyncQueueState>()(
 /** 현재 사용자의 대기 레슨 (FIFO — queuedAt 오름차순) */
 export function pendingForUser(items: QueuedLesson[], userId: string): QueuedLesson[] {
   return items
+    .filter((i) => i.userId === userId)
+    .sort((a, b) => a.queuedAt - b.queuedAt);
+}
+
+/** 현재 사용자의 대기 복습 (FIFO — queuedAt 오름차순) */
+export function pendingReviewsForUser(reviews: QueuedReview[], userId: string): QueuedReview[] {
+  return reviews
     .filter((i) => i.userId === userId)
     .sort((a, b) => a.queuedAt - b.queuedAt);
 }

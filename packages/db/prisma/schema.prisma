@@ -54,6 +54,7 @@ model Profile {
   progress        UserProgress[]
   exerciseHistory UserExerciseHistory[]
   reviewStates    UserReviewState[]
+  reviewSessions  UserReviewSession[]
   badges          UserBadge[]
   leagueEntries   LeagueEntry[]
 
@@ -196,6 +197,22 @@ model UserReviewState {
   @@id([userId, exerciseId])
   @@index([userId, languagePairId, dueAt])
   @@map("user_review_state")
+}
+
+/// 복습 세션 완료 기록 — 오프라인 복습 쓰기 큐의 멱등 가드 (D24).
+/// 레슨의 user_progress.id처럼, 클라이언트 생성 id로 같은 복습 세션의 재실행을
+/// 건너뛰게 해 SM-2 이중 전진·XP 이중 가산을 막는다. completedAt은 학습 시점(스냅샷 동결 시각).
+model UserReviewSession {
+  id          String   @id
+  userId      String   @map("user_id") @db.Uuid
+  completedAt DateTime @map("completed_at") @db.Timestamptz(3)
+  xpEarned    Int      @map("xp_earned")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_review_session")
 }
 
 model Badge {

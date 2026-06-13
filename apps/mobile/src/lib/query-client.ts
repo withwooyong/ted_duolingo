@@ -52,6 +52,8 @@ const EXCLUDED_QUERY_ROOTS = new Set([
   'review-session', // 매번 새로 조회(gcTime:0) — 진행 중 세션을 stale 복원하면 안 됨
   'league', // 주간 마감·승급 로직과 얽혀 오래된 순위가 오해를 부름
   'review-count', // due_at <= now 시각 의존 — 캐시가 금세 부정확
+  // 'review-snapshot'은 일부러 영속한다 — 오프라인 복습용으로 온라인일 때 due 세션을 '동결'한 것이라
+  // stale이 곧 의도된 동작. 완료 입력은 멱등 가드(user_review_session)로 재실행 안전하다(D24).
 ]);
 
 export function shouldDehydrateQuery(query: Query): boolean {

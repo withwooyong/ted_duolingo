@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v1.0 (Phase 4 PWA 오프라인 full reload 복원 — 결정 D23 반영) | 2026-06-13
+> v1.1 (Phase 4 오프라인 복습 큐 — 결정 D24 반영) | 2026-06-14
 
 ---
 
@@ -41,6 +41,7 @@
 | D21 | 오프라인 모드 | **읽기 캐시 중심** — 쓰기 큐는 충돌 위험으로 범위 제외. ① TanStack Query persistence(AsyncStorage)로 스킬트리·레슨·문제·프로필 등 콘텐츠 스냅샷 영속, persister storage 키에 userId를 넣어 **사용자별 캐시 물리 분리**(로그아웃 시 제거). ② NetInfo를 `onlineManager`에 연결(네이티브만; 웹은 기본 window online/offline 리스너 사용). ③ 시각·주간 마감 의존 쿼리(`league`·`review-count`·`review-session`)는 stale 값이 오해를 부르므로 persist 제외(`shouldDehydrateQuery`). ④ 오프라인 시 레슨·복습 **진입을 차단**(다 풀고 저장 실패 방지). 한계: dev web은 서비스워커가 없어 오프라인 full reload 불가(네이티브는 임베드 번들로 정상, 실제 오프라인 복원은 native/PWA) |
 | D23 | PWA 앱 셸 캐시 | **오프라인 full reload 복원** — D21(데이터)·D22(쓰기)에 더해, 오프라인에서 page reload 시 앱이 부팅되게 하는 마지막 조각. ① 정적 export(`pnpm build:web` → `dist/`) + 서비스워커(`public/sw.js`)가 **앱 셸(index.html + 해시 JS/CSS 번들)만** 캐시. ② 역할 분리 — SW는 **교차 오리진(Supabase)·비-GET을 통과**시켜 데이터는 persist(D21)·쓰기는 sync-queue(D22)가 담당. ③ SW 전략: 네비게이션 network-first(오프라인이면 셸 `/` fallback) / 해시 에셋 cache-first(불변) / 그 외 same-origin GET network-first. ④ 등록은 **production export만**(`components/sw-register.tsx`, NODE_ENV 가드) — dev web은 SW 없어 오프라인 reload 불가(Metro 메모리 번들). ⑤ web `output:"single"`은 `+html.tsx`를 무시하므로 manifest 링크·meta는 `public/index.html`로 주입. ⑥ onlineManager 초기 상태를 `navigator.onLine`으로 동기화(오프라인 로드 시 배너·일시정지 보장). 한계: persist 쓰로틀(1s) 전 오프라인 reload 시 데이터 복원 실패(실사용 무관). e2e `pwa_offline_reload.py`(13체크)가 `dist/` 서빙으로 검증 |
 | D22 | 오프라인 쓰기 큐 | **레슨 한정 "의도 재실행" 큐** — D21의 레슨 진입 차단을 큐잉으로 대체. ① 충돌 해결은 완료 절대값이 아니라 **레슨 입력(result·history)을 큐잉**(zustand+AsyncStorage 영속, userId 태깅)했다가 복귀 시 `completeLessonWrite`를 **서버 최신 상태에 대고 재실행** — XP 가산·스트릭·SM-2·리그가 모두 read-modify-write라 충돌을 자연히 흡수. ② 시각 의존 값(스트릭·due·일일XP·하트 충전)은 `completedAt`(학습 시점) 기준으로 계산해 재실행 시점과 무관하게 정확. ③ 멱등성: `progressId`(=user_progress.id)로 중복 적용 차단(큐 재시도 안전). ④ 오프라인 완료 시 홈을 **낙관적 갱신**(XP·스트릭·일일XP·스킬트리 진행 + "동기화 대기 N개" pill), 복귀 시 invalidate로 서버값 보정. ⑤ 하트는 오프라인 오답에 프로필 캐시를 낙관적 차감, 동기화 때 `heartsLost`로 일괄 반영. **복습은 제외** — due 목록(`review-session`)이 시각 의존이라 D21에서 persist 제외했고 오프라인에서 세션을 띄울 수 없음(복습 진입 차단 유지). 오프라인 진입은 **문제가 prefetch된 레슨만**(홈에서 "이어하기" 레슨 미리 캐시). 한계: 동기화 중 부분 실패(진행 삽입 후 중단)는 극히 드물게 후속 쓰기 손실 — 재시도 시 멱등 skip이라 이중 적용은 없음 |
+| D24 | 오프라인 복습 큐 | **D22의 복습 확장 — "시점 동결 스냅샷 + 의도 재실행"**. D22가 미룬 복습 오프라인화를 레슨과 대칭으로 구현. ① **시점 동결**: live `review-session`(gcTime:0·persist 제외, 온라인 정확성 유지)과 **분리된** 영속 쿼리 `review-snapshot`을 둬 온라인일 때 due 세션을 동결한다(홈이 "이어하기" 레슨처럼 prefetch). 스냅샷은 `staleTime:0`이라 온라인이면 진입/복귀마다 최신 due로 재동결하고, **동결은 오프라인(paused)일 때 자연히** 일어난다(refetch 불가 → persist된 stale-empty가 굳는 것 방지). 오프라인 홈 due 카운트·진입 게이팅은 스냅샷 길이 기준. ② **쓰기**: 복습 입력(pairId·history·정오답)을 sync-queue에 적재했다가 복귀 시 `completeReviewWrite`(온라인 훅·큐 공용 단일 소스)를 **서버 fresh 상태에 대고 재실행**(SM-2·XP가 read-modify-write라 충돌 흡수). ③ **멱등성**: 복습은 레슨의 `user_progress` 같은 가드가 없어 SM-2 이중 전진·XP 이중 가산 위험 → **새 테이블 `UserReviewSession`**(클라이언트 생성 id)을 가드로 추가(RLS 0005), 같은 세션 재실행을 통째 skip. ④ 오프라인 완료는 홈 **낙관 갱신**(총 XP만·복습은 일일/주간 제외, 스냅샷 소진→배너 숨김, "동기화 대기" pill) + 완료 화면 대기 안내, 복귀 시 invalidate 보정. 한계: D22와 동일(부분 실패 시 후속 쓰기 손실 가능하나 멱등 가드로 이중 적용 없음). e2e `offline_review_loop.py`(20체크) |
 
 ### 1.3 목표
 
@@ -328,6 +329,7 @@ League
 - [x] Shadowing (STT) — 6번째 문제 유형 `SHADOW_SPEAK`. TTS 참조 재생 → 따라 말하기 → 단어 포함률 채점(임계 0.6). STT 추상화: 웹 Web Speech API 실연동, 네이티브 실 STT는 EAS 빌드 시 (현재 fallback). 레슨·복습 공통 (D20)
 - [x] 오프라인 모드 (읽기 캐시 — TanStack Query persistence로 콘텐츠 오프라인 열람, 사용자별 캐시 분리, 오프라인 배너. e2e 15개 체크. D21)
 - [x] 오프라인 쓰기 큐 (레슨 한정 — 오프라인 레슨 풀이→입력 큐잉(영속)→복귀 시 `completeLessonWrite` 재실행으로 동기화, 낙관적 홈 반영·"동기화 대기" 표시·멱등성. 복습은 제외(due 목록 시각 의존). e2e 21개 체크. D22)
+- [x] 오프라인 복습 큐 (D22의 복습 확장 — 온라인일 때 due 세션을 `review-snapshot`으로 동결→오프라인 재생, 입력 큐잉→복귀 시 `completeReviewWrite` 재실행. 멱등 가드 `UserReviewSession` 신설(RLS 0005). e2e 20개 체크. D24)
 - [x] Web/PWA (오프라인 full reload 복원 — 정적 export + 서비스워커로 앱 셸 캐시, production 등록·SW는 Supabase 통과·데이터/쓰기는 persist·큐가 담당. e2e 13개 체크. D23)
 
 ---

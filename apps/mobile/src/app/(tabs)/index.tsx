@@ -8,7 +8,12 @@ import { useDailyXp, useHearts } from '@/hooks/use-game';
 import { useOnline } from '@/hooks/use-online';
 import { useUserLanguages } from '@/hooks/use-onboarding';
 import { useProfile } from '@/hooks/use-profile';
-import { useDueReviewCount } from '@/hooks/use-review';
+import {
+  fetchReviewSession,
+  reviewSnapshotKey,
+  useDueReviewCount,
+  useReviewSnapshot,
+} from '@/hooks/use-review';
 import {
   fetchLessonExercises,
   lessonExercisesKey,
@@ -25,15 +30,23 @@ export default function HomeScreen() {
   const { data: languages, isLoading: langLoading } = useUserLanguages();
   const { data: tree, isLoading: treeLoading } = useSkillTree();
   const { data: dueReviews } = useDueReviewCount();
+  const { data: reviewSnapshot } = useReviewSnapshot();
   const online = useOnline();
   const queryClient = useQueryClient();
   const userId = profile?.id ?? null;
   const pendingCount = useSyncQueue((s) =>
-    userId ? s.items.filter((i) => i.userId === userId).length : 0,
+    userId
+      ? s.items.filter((i) => i.userId === userId).length +
+        s.reviews.filter((i) => i.userId === userId).length
+      : 0,
   );
   const [showOfflineBlock, setShowOfflineBlock] = useState(false);
 
-  // 오프라인 대비 — 온라인일 때 "이어하기" 레슨 문제를 미리 캐시(오프라인 진입 보장, D22)
+  // 오프라인 due 카운트 — 온라인은 live(review-count), 오프라인은 동결 스냅샷 길이(D24)
+  const snapshotDue = reviewSnapshot?.exercises.length ?? 0;
+  const effectiveDue = online === false ? snapshotDue : (dueReviews ?? 0);
+
+  // 오프라인 대비 — 온라인일 때 "이어하기" 레슨 문제(D22)와 복습 due 세션 스냅샷(D24)을 미리 캐시
   const currentLessonId = tree?.currentLesson?.id;
   useEffect(() => {
     if (!online || !currentLessonId) return;
@@ -42,6 +55,14 @@ export default function HomeScreen() {
       queryFn: () => fetchLessonExercises(currentLessonId),
     });
   }, [online, currentLessonId, queryClient]);
+
+  useEffect(() => {
+    if (!online || !userId) return;
+    void queryClient.prefetchQuery({
+      queryKey: reviewSnapshotKey(userId),
+      queryFn: () => fetchReviewSession(userId),
+    });
+  }, [online, userId, queryClient]);
 
   // 학습 언어 미등록 → 온보딩 (PLAN.md §4)
   if (!langLoading && languages && languages.length === 0) {
@@ -64,9 +85,9 @@ export default function HomeScreen() {
     router.push(`/lesson/${lessonId}`);
   };
 
-  // 복습은 시각 의존 due 목록이 캐시되지 않아(D21) 오프라인 진입을 계속 차단한다.
+  // 복습은 오프라인이면 동결 스냅샷이 있을 때만 진입 가능(D24). 스냅샷이 비면 차단 안내.
   const startReview = () => {
-    if (!online) {
+    if (!online && snapshotDue === 0) {
       setShowOfflineBlock(true);
       return;
     }
@@ -104,7 +125,7 @@ export default function HomeScreen() {
           testID="offline-blocked"
         >
           <Text className="text-center text-sm font-extrabold text-danger">
-            오프라인에선 준비된 레슨만 풀 수 있어요. 복습은 연결 후 이용하세요.
+            오프라인에선 준비된 레슨·복습만 풀 수 있어요. 연결 후 다시 시도하세요.
           </Text>
         </Pressable>
       )}
@@ -137,14 +158,14 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* 복습 배너 — due 문제가 있을 때만 (SM-2 간격 반복) */}
-      {!!dueReviews && dueReviews > 0 && (
+      {/* 복습 배너 — due 문제가 있을 때만 (SM-2 간격 반복). 오프라인은 동결 스냅샷 기준(D24) */}
+      {effectiveDue > 0 && (
         <Pressable
           className="mx-5 mt-3 flex-row items-center justify-between rounded-2xl border-2 border-grape bg-grape/10 px-4 py-3 active:opacity-80"
           onPress={startReview}
           testID="review-banner"
         >
-          <Text className="text-sm font-extrabold text-grape">🔄 복습할 문제 {dueReviews}개</Text>
+          <Text className="text-sm font-extrabold text-grape">🔄 복습할 문제 {effectiveDue}개</Text>
           <Text className="text-sm font-extrabold text-grape">복습하기 ▶</Text>
         </Pressable>
       )}
@@ -173,7 +194,7 @@ export default function HomeScreen() {
                   Alert.alert('🔒 잠긴 스킬', '이전 스킬을 먼저 완료하세요.');
                 } else if (skill.nextLesson) {
                   startLesson(skill.nextLesson.id);
-                } else if (dueReviews && dueReviews > 0) {
+                } else if (effectiveDue > 0) {
                   startReview();
                 } else {
                   Alert.alert('✓ 완료한 스킬', '복습할 문제는 간격을 두고 다시 나와요. 곧 복습으로 만나요!');

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_HEARTS, PERFECT_BONUS_XP, SM2_DEFAULT_EASE, SM2_MIN_EASE } from './constants';
+import { MAX_HEARTS, PERFECT_BONUS_XP, REVIEW_XP, SM2_DEFAULT_EASE, SM2_MIN_EASE } from './constants';
 import {
   consumeHeart,
   earnedBadgeKeys,
@@ -14,6 +14,7 @@ import {
   premiumExpiryDate,
   refillHearts,
   resolveLeagueOutcome,
+  reviewXp,
   scoreShadowing,
   sm2Update,
   weekStartDate,
@@ -104,6 +105,24 @@ describe('lessonXp', () => {
 
   it('문제 0개면 보너스 없음', () => {
     expect(lessonXp(10, 0, 0)).toBe(10);
+  });
+});
+
+describe('reviewXp', () => {
+  it('전부 정답이면 REVIEW_XP 전액', () => {
+    expect(reviewXp(7, 7)).toBe(REVIEW_XP);
+  });
+
+  it('정답 비율에 비례(반올림)', () => {
+    // 5 * 3/7 = 2.14 → 2
+    expect(reviewXp(3, 7)).toBe(2);
+    // 5 * 1/2 = 2.5 → 3 (반올림)
+    expect(reviewXp(1, 2)).toBe(3);
+  });
+
+  it('0정답·문제 0개는 0', () => {
+    expect(reviewXp(0, 7)).toBe(0);
+    expect(reviewXp(0, 0)).toBe(0);
   });
 });
 

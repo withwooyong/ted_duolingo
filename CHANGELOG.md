@@ -7,6 +7,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-14] Phase 4 — 오프라인 복습 큐 (D24)
+
+### Added
+- 오프라인 복습 큐(D24) — D22(레슨 오프라인 쓰기)의 복습 확장. "시점 동결 스냅샷 + 의도 재실행"으로 복습까지 오프라인화. 레슨과 대칭이되, 복습은 시각 의존 due 목록과 멱등 키 부재라는 두 난점을 스냅샷 분리·새 가드 테이블로 해결
+- `packages/db` `UserReviewSession` 테이블(마이그레이션 `20260613232500_add_user_review_session`) — 복습 완료 멱등 가드(클라이언트 생성 id). 레슨 `user_progress.id` 대칭으로 SM-2 이중 전진·XP 이중 가산 방지
+- `supabase/policies/0005_review_session.sql` — `user_review_session` 본인 행 RLS(select·insert)
+- `@ted/shared` `reviewXp(correct, total)` 순수함수 + vitest 3케이스 — 복습 XP(정답 비율 비례 반올림) 단일 소스(낙관 반영·서버 쓰기 공유). use-review 인라인 계산에서 추출
+- `apps/mobile/src/lib/review-writes.ts` `completeReviewWrite` — 온라인 훅·오프라인 큐 공용 단일 소스. 멱등 가드 확인→가드 행 insert→`upsertReviewStates`(fresh 상태 재계산)→총 XP 가산
+- `apps/mobile/src/hooks/use-review.ts` — `useReviewSnapshot`/`reviewSnapshotKey`/`fetchReviewSession`: live `review-session`과 분리된 영속 동결 스냅샷(`staleTime:0` — 온라인이면 재동결, 오프라인은 paused로 자연 동결)
+- `apps/mobile/src/lib/sync-queue.ts` — `QueuedReview` + `reviews` 배열·`enqueueReview`/`removeReview`/`pendingReviewsForUser`, `clearForUser`가 레슨·복습 모두 정리
+- e2e — `apps/mobile/e2e/offline_review_loop.py` (20체크): due 백데이트→온라인 스냅샷 동결→오프라인 복습 풀이→낙관 반영→복귀 동기화→서버/DB 검증(`user_review_session` 1행·due 7행 전진·XP 이중 적용 없음)
+
+### Changed
+- `apps/mobile/src/components/sync-processor.tsx` — 레슨 드레인 뒤 복습 큐도 `completeReviewWrite`로 fresh profile에 대고 드레인(복습 XP가 레슨 총 XP 위에 누적), invalidate 키에 `review-snapshot` 추가
+- `apps/mobile/src/app/review.tsx` — 오프라인은 동결 스냅샷 재생, 완료 시 입력 큐잉 + 낙관 반영(총 XP·스냅샷 소진·배너 숨김) + 완료 화면 대기 안내. 하드 오프라인 차단을 "스냅샷 있으면 허용"으로 완화
+- `apps/mobile/src/app/(tabs)/index.tsx` — 복습 스냅샷 prefetch(온라인), 오프라인 due 카운트·진입 게이팅을 스냅샷 기준으로, "동기화 대기" pill에 복습 합산
+- `apps/mobile/src/hooks/use-review.ts` `useCompleteReview` — `completeReviewWrite` 호출·`review-snapshot` invalidate 추가
+- `apps/mobile/src/lib/query-client.ts` — `review-snapshot`은 일부러 persist(동결이 의도된 동작) 주석 명시
+- 검증: vitest **66**(+3) + 모바일 e2e 67(학습)+9(복습)+15(오프라인 읽기)+21(오프라인 쓰기)+**20(오프라인 복습, 신규)**+13(PWA) 전부 통과, typecheck·lint clean
+
+---
+
 ## [2026-06-13] Phase 4 — PWA 오프라인 full reload 복원
 
 ### Added
