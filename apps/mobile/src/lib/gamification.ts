@@ -66,6 +66,7 @@ export async function upsertReviewStates(
   userId: string,
   languagePairId: string,
   history: { exerciseId: string; isCorrect: boolean }[],
+  now: number = Date.now(),
 ): Promise<void> {
   if (history.length === 0) return;
   const ids = history.map((h) => h.exerciseId);
@@ -83,7 +84,6 @@ export async function upsertReviewStates(
       { repetitions: r.repetitions, easeFactor: r.ease_factor, interval: r.interval } as ReviewState,
     ]),
   );
-  const now = Date.now();
 
   const rows = history.map((h) => {
     const next = sm2Update(prevMap.get(h.exerciseId) ?? INITIAL_REVIEW_STATE, h.isCorrect);

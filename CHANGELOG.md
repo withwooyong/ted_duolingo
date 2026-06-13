@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-13] Phase 4 — 오프라인 쓰기 큐
+
+### Added
+- 오프라인 쓰기 큐(D22, 레슨 한정) — 오프라인에서 레슨을 풀면 입력을 영속 큐에 적재했다가 온라인 복귀 시 동기화. 충돌 해결은 "의도 재실행": 완료 절대값이 아니라 레슨 입력(result·history)을 큐잉했다가 `completeLessonWrite`를 서버 최신 상태에 대고 재실행(XP 가산·스트릭·SM-2·리그가 read-modify-write라 충돌 흡수). 복습은 due 목록이 시각 의존이라 제외(진입 차단 유지)
+- `apps/mobile/src/lib/learning-writes.ts` — 레슨 완료 서버 쓰기 로직 단일 소스(`completeLessonWrite`). 훅·동기화 큐 공유. `progressId`로 멱등(중복 적용 차단), `completedAt`으로 시각 의존 값(스트릭·due·일일XP·하트) 정확 계산, `heartsLost` 일괄 차감(프리미엄 제외)
+- `apps/mobile/src/lib/sync-queue.ts` — zustand+persist(AsyncStorage) 큐 스토어(userId 태깅), `pendingForUser` 셀렉터
+- `apps/mobile/src/components/sync-processor.tsx` — `_layout` 마운트, online·대기 항목 있으면 FIFO 드레인(항목마다 fresh profile 재조회 → 재실행 → 성공 시 제거 → 전체 invalidate)
+- `apps/mobile/src/hooks/use-profile.ts` `fetchProfileDto(userId)`, `use-skill-tree.ts` `markLessonComplete`(낙관적 진행 갱신용 순수 함수)·`fetchLessonExercises`/`lessonExercisesKey`(prefetch 공유)
+- e2e — `apps/mobile/e2e/offline_write_loop.py` (21체크): 오프라인 레슨 풀이→완료(대기 안내)→홈 낙관 반영(XP·스트릭·스킬진행·대기 N)→복귀 동기화→reload 서버 반영(이중 적용 없음·배지 수여)
+
+### Changed
+- `apps/mobile/src/hooks/use-game.ts` — `useCompleteLesson` 본문을 `completeLessonWrite` 호출로 축소(쓰기 로직 단일화). `upsertReviewStates`(gamification.ts)에 `now` 인자 추가(재실행 시각 정확도)
+- `apps/mobile/src/app/lesson/[id]/index.tsx` — 오프라인 분기: 오답 시 프로필 캐시 하트 낙관 차감, 완료 시 큐 적재 + 낙관적 캐시(XP·스트릭·일일XP·스킬트리) + 로컬 계산값으로 완료 화면(배지 생략)
+- `apps/mobile/src/app/lesson/[id]/complete.tsx` — `pending='1'` 시 "오프라인 완료 — 연결되면 자동 저장" 안내
+- `apps/mobile/src/app/(tabs)/index.tsx` — 오프라인 레슨 진입 허용(문제 캐시된 레슨만), "동기화 대기 N개" pill, "이어하기" 레슨 prefetch. 복습은 오프라인 차단 유지
+- `apps/mobile/src/app/_layout.tsx` — `SyncProcessor` 마운트
+- e2e — `offline_loop.py`(D21) 진입 차단 검증을 D22 동작(캐시된 레슨은 오프라인 진입 가능)으로 갱신(15체크 유지)
+
+---
+
 ## [2026-06-13] Phase 4 — 오프라인 읽기 캐시
 
 ### Added

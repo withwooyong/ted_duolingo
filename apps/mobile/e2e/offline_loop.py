@@ -94,17 +94,19 @@ with sync_playwright() as p:
     check('오프라인 홈: 단원 배너(캐시) 표시', tid(page, 'unit-banner').count() == 1)
     shot(page, '03_offline_cached_home')
 
-    print('5) 오프라인 학습 시작 차단')
+    print('5) 오프라인에서 캐시된(prefetch된) 레슨은 진입 가능 — D21 차단이 D22 쓰기 큐로 대체됨')
     tid(page, 'continue-button').click()
-    page.wait_for_selector('[data-testid="offline-blocked"]', timeout=10000)
-    check('오프라인 차단 안내 표시', tid(page, 'offline-blocked').count() == 1)
-    check('레슨으로 전이되지 않음 (URL 유지)', '/lesson' not in page.url)
-    shot(page, '04_offline_blocked')
+    page.wait_for_selector('[data-testid="exercise-area"]', timeout=15000)
+    check('오프라인 캐시 레슨 진입 가능(D22)', '/lesson' in page.url)
+    check('차단 토스트 없음 (캐시된 레슨)', tid(page, 'offline-blocked').count() == 0)
+    shot(page, '04_offline_lesson_enter')
 
-    print('6) 온라인 복귀 → 배너 사라짐')
+    print('6) 온라인 복귀 → 배너 사라짐 → 홈 복귀(레슨 이탈, 진행 저장 안 함)')
     page.context.set_offline(False)
     page.wait_for_selector('[data-testid="offline-banner"]', state='detached', timeout=15000)
     check('온라인 복귀 시 배너 사라짐', tid(page, 'offline-banner').count() == 0)
+    page.goto(BASE)  # 온라인이므로 reload 가능 — 레슨 미완료라 큐도 비어 있음
+    page.wait_for_selector('[data-testid="continue-button"]', timeout=60000)
     shot(page, '05_online_again')
 
     print('7) 사용자 캐시 분리: A 로그아웃 → B 가입 → 오프라인 시 A 데이터 비노출')

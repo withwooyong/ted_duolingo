@@ -1,6 +1,7 @@
 import { LANG_FLAGS, LANG_LABELS } from '@ted/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useDailyXp, useHearts } from '@/hooks/use-game';
@@ -8,7 +9,13 @@ import { useOnline } from '@/hooks/use-online';
 import { useUserLanguages } from '@/hooks/use-onboarding';
 import { useProfile } from '@/hooks/use-profile';
 import { useDueReviewCount } from '@/hooks/use-review';
-import { useSkillTree, type SkillNode } from '@/hooks/use-skill-tree';
+import {
+  fetchLessonExercises,
+  lessonExercisesKey,
+  useSkillTree,
+  type SkillNode,
+} from '@/hooks/use-skill-tree';
+import { useSyncQueue } from '@/lib/sync-queue';
 
 /** 홈 — 스킬 트리 (프로토타입 prototype/index.html 디자인 기준) */
 export default function HomeScreen() {
@@ -19,23 +26,34 @@ export default function HomeScreen() {
   const { data: tree, isLoading: treeLoading } = useSkillTree();
   const { data: dueReviews } = useDueReviewCount();
   const online = useOnline();
+  const queryClient = useQueryClient();
+  const userId = profile?.id ?? null;
+  const pendingCount = useSyncQueue((s) =>
+    userId ? s.items.filter((i) => i.userId === userId).length : 0,
+  );
   const [showOfflineBlock, setShowOfflineBlock] = useState(false);
+
+  // 오프라인 대비 — 온라인일 때 "이어하기" 레슨 문제를 미리 캐시(오프라인 진입 보장, D22)
+  const currentLessonId = tree?.currentLesson?.id;
+  useEffect(() => {
+    if (!online || !currentLessonId) return;
+    void queryClient.prefetchQuery({
+      queryKey: lessonExercisesKey(currentLessonId),
+      queryFn: () => fetchLessonExercises(currentLessonId),
+    });
+  }, [online, currentLessonId, queryClient]);
 
   // 학습 언어 미등록 → 온보딩 (PLAN.md §4)
   if (!langLoading && languages && languages.length === 0) {
     return <Redirect href="/onboarding" />;
   }
 
-  // 오프라인에선 진행 저장이 불가하므로 풀이 진입을 차단(D21) — 다 풀고 저장 실패하는 UX 방지.
-  // Alert는 Expo web에서 no-op이라 e2e 친화적인 인라인 토스트로 안내한다.
-  const blockOffline = (): boolean => {
-    if (online) return false;
-    setShowOfflineBlock(true);
-    return true;
-  };
-
+  // 오프라인 레슨은 문제가 캐시된 레슨만 가능(쓰기는 큐로 적재, D22). 미캐시 레슨은 진입 차단 안내.
   const startLesson = (lessonId: string) => {
-    if (blockOffline()) return;
+    if (!online && !queryClient.getQueryData(lessonExercisesKey(lessonId))) {
+      setShowOfflineBlock(true);
+      return;
+    }
     if (hearts !== null && hearts <= 0) {
       Alert.alert('하트가 없어요 💔', '하트는 시간당 1개씩 충전됩니다.\nPremium은 하트 무제한!', [
         { text: '기다리기', style: 'cancel' },
@@ -46,8 +64,12 @@ export default function HomeScreen() {
     router.push(`/lesson/${lessonId}`);
   };
 
+  // 복습은 시각 의존 due 목록이 캐시되지 않아(D21) 오프라인 진입을 계속 차단한다.
   const startReview = () => {
-    if (blockOffline()) return;
+    if (!online) {
+      setShowOfflineBlock(true);
+      return;
+    }
     router.push('/review');
   };
 
@@ -74,7 +96,7 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* 오프라인 풀이 차단 안내 (D21) */}
+      {/* 오프라인 진입 차단 안내 — 미캐시 레슨/복습만 해당(캐시된 레슨은 오프라인 풀이 가능, D22) */}
       {showOfflineBlock && !online && (
         <Pressable
           className="mx-5 mt-3 rounded-2xl border-2 border-danger bg-danger/10 px-4 py-3 active:opacity-80"
@@ -82,9 +104,21 @@ export default function HomeScreen() {
           testID="offline-blocked"
         >
           <Text className="text-center text-sm font-extrabold text-danger">
-            오프라인 상태에선 학습을 시작할 수 없어요. 연결 후 다시 시도하세요.
+            오프라인에선 준비된 레슨만 풀 수 있어요. 복습은 연결 후 이용하세요.
           </Text>
         </Pressable>
+      )}
+
+      {/* 동기화 대기 — 오프라인에서 끝낸 레슨이 연결되면 자동 저장된다(D22) */}
+      {pendingCount > 0 && (
+        <View
+          className="mx-5 mt-3 rounded-2xl border-2 border-ink/20 bg-ink/5 px-4 py-2.5"
+          testID="sync-pending"
+        >
+          <Text className="text-center text-sm font-extrabold text-ink-sub">
+            📡 동기화 대기 {pendingCount}개 — 연결되면 저장돼요
+          </Text>
+        </View>
       )}
 
       {/* 일일 목표 */}

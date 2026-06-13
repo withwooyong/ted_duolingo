@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v0.8 (Phase 4 오프라인 읽기 캐시 — 결정 D21 반영) | 2026-06-13
+> v0.9 (Phase 4 오프라인 쓰기 큐 — 결정 D22 반영) | 2026-06-13
 
 ---
 
@@ -39,6 +39,7 @@
 | D19 | SM-2 복습 | **문제별 전용 상태 테이블 `UserReviewState`**(이력 테이블에서 재계산 대신 영속). binary 채점→quality(정답5·오답2) 매핑, 활성 언어쌍 필터용 `language_pair_id` 비정규화. 복습 XP는 총합(profile.xp)에만 반영(주간 리그·일일 목표 제외)·하트 무소모. 서버 검증은 클라우드 전환 시 Edge Function으로 |
 | D20 | Shadowing(STT) | **6번째 문제 유형 `SHADOW_SPEAK`** — 기존 5종·레슨·SM-2 복습에 그대로 편입(별도 모드 아님). 채점은 정확 일치 대신 **단어 포함률(recall) ≥ 0.6**(초보자 관대, STT가 구두점·억양을 흘리므로). STT는 **추상화 레이어**(`lib/speech-recognition.ts`): 웹은 Web Speech API 실연동, 네이티브 실 STT는 EAS 커스텀 빌드 필요라 현재 "직접 확인" fallback(D16/OAuth와 동일한 클라우드 경계). e2e(웹)는 `window.__mockShadowTranscript`로 인식 결과 주입 |
 | D21 | 오프라인 모드 | **읽기 캐시 중심** — 쓰기 큐는 충돌 위험으로 범위 제외. ① TanStack Query persistence(AsyncStorage)로 스킬트리·레슨·문제·프로필 등 콘텐츠 스냅샷 영속, persister storage 키에 userId를 넣어 **사용자별 캐시 물리 분리**(로그아웃 시 제거). ② NetInfo를 `onlineManager`에 연결(네이티브만; 웹은 기본 window online/offline 리스너 사용). ③ 시각·주간 마감 의존 쿼리(`league`·`review-count`·`review-session`)는 stale 값이 오해를 부르므로 persist 제외(`shouldDehydrateQuery`). ④ 오프라인 시 레슨·복습 **진입을 차단**(다 풀고 저장 실패 방지). 한계: dev web은 서비스워커가 없어 오프라인 full reload 불가(네이티브는 임베드 번들로 정상, 실제 오프라인 복원은 native/PWA) |
+| D22 | 오프라인 쓰기 큐 | **레슨 한정 "의도 재실행" 큐** — D21의 레슨 진입 차단을 큐잉으로 대체. ① 충돌 해결은 완료 절대값이 아니라 **레슨 입력(result·history)을 큐잉**(zustand+AsyncStorage 영속, userId 태깅)했다가 복귀 시 `completeLessonWrite`를 **서버 최신 상태에 대고 재실행** — XP 가산·스트릭·SM-2·리그가 모두 read-modify-write라 충돌을 자연히 흡수. ② 시각 의존 값(스트릭·due·일일XP·하트 충전)은 `completedAt`(학습 시점) 기준으로 계산해 재실행 시점과 무관하게 정확. ③ 멱등성: `progressId`(=user_progress.id)로 중복 적용 차단(큐 재시도 안전). ④ 오프라인 완료 시 홈을 **낙관적 갱신**(XP·스트릭·일일XP·스킬트리 진행 + "동기화 대기 N개" pill), 복귀 시 invalidate로 서버값 보정. ⑤ 하트는 오프라인 오답에 프로필 캐시를 낙관적 차감, 동기화 때 `heartsLost`로 일괄 반영. **복습은 제외** — due 목록(`review-session`)이 시각 의존이라 D21에서 persist 제외했고 오프라인에서 세션을 띄울 수 없음(복습 진입 차단 유지). 오프라인 진입은 **문제가 prefetch된 레슨만**(홈에서 "이어하기" 레슨 미리 캐시). 한계: 동기화 중 부분 실패(진행 삽입 후 중단)는 극히 드물게 후속 쓰기 손실 — 재시도 시 멱등 skip이라 이중 적용은 없음 |
 
 ### 1.3 목표
 
@@ -324,7 +325,8 @@ League
 
 - [x] SM-2 복습 알고리즘 (간격 반복 — 레슨·복습 풀이마다 문제별 상태 갱신, 홈 복습 배너 + `/review` 세션. 복습 XP는 총합에만 반영·하트 무소모. e2e 9개 체크)
 - [x] Shadowing (STT) — 6번째 문제 유형 `SHADOW_SPEAK`. TTS 참조 재생 → 따라 말하기 → 단어 포함률 채점(임계 0.6). STT 추상화: 웹 Web Speech API 실연동, 네이티브 실 STT는 EAS 빌드 시 (현재 fallback). 레슨·복습 공통 (D20)
-- [x] 오프라인 모드 (읽기 캐시 — TanStack Query persistence로 콘텐츠 오프라인 열람, 사용자별 캐시 분리, 오프라인 배너, 풀이 진입 차단. 쓰기 큐는 범위 제외. e2e 15개 체크. D21)
+- [x] 오프라인 모드 (읽기 캐시 — TanStack Query persistence로 콘텐츠 오프라인 열람, 사용자별 캐시 분리, 오프라인 배너. e2e 15개 체크. D21)
+- [x] 오프라인 쓰기 큐 (레슨 한정 — 오프라인 레슨 풀이→입력 큐잉(영속)→복귀 시 `completeLessonWrite` 재실행으로 동기화, 낙관적 홈 반영·"동기화 대기" 표시·멱등성. 복습은 제외(due 목록 시각 의존). e2e 21개 체크. D22)
 - [ ] Web/PWA (선택 — 오프라인 full reload 복원은 서비스워커 필요라 이 단계에서 완성)
 
 ---

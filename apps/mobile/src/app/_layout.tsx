@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 
 import { OfflineBanner } from '@/components/offline-banner';
+import { SyncProcessor } from '@/components/sync-processor';
 import { initOnlineManager } from '@/lib/online-status';
 import {
   CACHE_BUSTER,
@@ -41,6 +42,7 @@ export default function RootLayout() {
   const stack = (
     <>
       <OfflineBanner />
+      <SyncProcessor />
       <Stack
         screenOptions={{
           headerShown: false,

@@ -19,13 +19,15 @@ interface EarnedBadgeParam {
 
 /** 레슨 완료 — 컨페티 연출 + XP·정확도·스트릭 카드 + 새 배지 */
 export default function LessonCompleteScreen() {
-  const { xp, correct, total, streak, badges } = useLocalSearchParams<{
+  const { xp, correct, total, streak, badges, pending } = useLocalSearchParams<{
     xp: string;
     correct: string;
     total: string;
     streak: string;
     /** JSON: {icon,title}[] — 이번 완료로 새로 획득한 배지 */
     badges?: string;
+    /** '1'이면 오프라인 완료 — 연결 시 동기화 대기 (D22) */
+    pending?: string;
   }>();
   const accuracy = Math.round((Number(correct) / Math.max(1, Number(total))) * 100);
   const perfect = correct === total;
@@ -70,6 +72,19 @@ export default function LessonCompleteScreen() {
                 </Text>
               ))}
             </View>
+          </View>
+        </Reveal>
+      )}
+
+      {pending === '1' && (
+        <Reveal delay={850} className="w-full">
+          <View
+            className="mt-6 w-full items-center rounded-2xl border-2 border-ink/20 bg-ink/5 px-4 py-3"
+            testID="offline-pending-note"
+          >
+            <Text className="text-center text-sm font-extrabold text-ink-sub">
+              📡 오프라인에서 완료했어요. 연결되면 자동으로 저장돼요.
+            </Text>
           </View>
         </Reveal>
       )}
