@@ -2,12 +2,12 @@
 
 > Last updated: 2026-06-13 (KST)
 > Branch: `main`
-> Latest commit: `20be934` (커밋 전 — 이번 Shadowing 작업은 아직 미커밋, 사용자 요청 시 커밋·푸시)
-> Repo: https://github.com/withwooyong/ted_duolingo (**public**)
+> Latest commit: `b512352` - Phase 4(Shadowing): 발음 따라하기 6번째 문제 유형 — STT 추상화 + 단어 포함률 채점 (e2e 67/9 검증 완료)
+> Repo: https://github.com/withwooyong/ted_duolingo (**public**, 푸시 완료)
 
 ## Current Status
 
-Phase 0 → 1 → 2 → 3(로컬) → Phase 4 SM-2 복습 완료에 이어 **Phase 4 Shadowing(발음 따라하기/STT) 로컬 구현 완료**. 6번째 문제 유형 `SHADOW_SPEAK` — 문장 TTS 재생 → 따라 말하기 → STT 단어 포함률 채점(임계 0.6). 기존 5종·레슨·SM-2 복습에 그대로 편입. STT는 추상화 레이어로 **웹만 실연동**(Web Speech API), 네이티브 실 STT는 EAS 빌드 시(현재 fallback). 검증: **vitest 63개 + 모바일 e2e 67개(학습·Shadowing 포함) + 9개(복습)** 전부 통과. typecheck·lint clean. ⚠️ **아직 미커밋·미푸시** (Admin e2e는 이번 변경 영향 없음 — 미실행).
+Phase 0 → 1 → 2 → 3(로컬) → Phase 4 SM-2 복습 완료에 이어 **Phase 4 Shadowing(발음 따라하기/STT) 로컬 구현 완료**. 6번째 문제 유형 `SHADOW_SPEAK` — 문장 TTS 재생 → 따라 말하기 → STT 단어 포함률 채점(임계 0.6). 기존 5종·레슨·SM-2 복습에 그대로 편입. STT는 추상화 레이어로 **웹만 실연동**(Web Speech API), 네이티브 실 STT는 EAS 빌드 시(현재 fallback). 검증: **vitest 63개 + 모바일 e2e 67개(학습·Shadowing 포함) + 9개(복습)** 전부 통과. typecheck·lint clean. **`origin/main` 푸시 완료** (`b512352`). (Admin e2e는 이번 변경 영향 없음 — 미실행.)
 
 ## Completed This Session (Phase 4 — Shadowing/STT)
 
@@ -60,10 +60,10 @@ Phase 0 → 1 → 2 → 3(로컬) → Phase 4 SM-2 복습 완료에 이어 **Pha
 - **개발 환경 기동**: `supabase start` → `pnpm db:migrate` → policies/ SQL 번호순 수동 적용(0001~0004) → `pnpm db:seed`. Admin은 `cp apps/admin/.env.example apps/admin/.env` 후 `pnpm admin`(3100). AI 생성은 .env에 `ANTHROPIC_API_KEY` 추가 시 활성
 - **검증 루틴**: `pnpm typecheck` + `pnpm lint` + `pnpm test`(vitest 63개) + 모바일 e2e(`learning_loop.py` 67개 + `review_loop.py` 9개, Expo web 8081) + Admin e2e(`admin_flow.py`, 3100, 15개). ⚠️ `review_loop.py`는 psql 필요(due_at 백데이트). Shadowing은 새 라우트 없음(컴포넌트만)이라 typed routes 재생성 불필요
 - **게임화·Freemium 수치는 @ted/shared/constants.ts가 단일 소스** — PREMIUM_PLANS·LANG_*·SHADOW_PASS_RATIO 포함. 변경 시 PLAN.md 동기화
-- **푸시 상태**: 이번 세션(Phase 4 Shadowing)은 **아직 미커밋·미푸시**. 직전 `20be934`(SM-2)까지 `origin/main` 반영 완료
+- **푸시 상태**: 이번 세션(Phase 4 Shadowing, `b512352`) 포함 `origin/main` 반영 완료
 - **사용자 선호**: 커밋 메시지 한글, 푸시는 명시 요청 시만, 미확정 항목(앱 이름 U2, Premium 가격 등)은 구현 전 확인
 
-## Files Modified This Session (Phase 4 Shadowing — 미커밋)
+## Files Modified This Session (Phase 4 Shadowing — `b512352`)
 
 ```
 shared:   types.ts(SHADOW_SPEAK·ShadowSpeakPayload), constants.ts(SHADOW_PASS_RATIO),
