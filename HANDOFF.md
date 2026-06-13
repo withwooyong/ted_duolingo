@@ -2,12 +2,12 @@
 
 > Last updated: 2026-06-13 (KST)
 > Branch: `main`
-> Latest commit: `699b171` - Phase 3(2/2) (이번 세션 Phase 4 SM-2 복습 커밋 예정 — 아직 푸시 전)
-> Repo: https://github.com/withwooyong/ted_duolingo (**public**, 직전까지 푸시 완료 · CI 통과)
+> Latest commit: `20be934` - Phase 4(SM-2 복습): 간격 반복 복습 — 레슨·복습 SM-2 갱신 + /review 세션 (e2e 9개 체크 검증 완료)
+> Repo: https://github.com/withwooyong/ted_duolingo (**public**, 푸시 완료)
 
 ## Current Status
 
-Phase 0 → 1 → 2 → 3(로컬) 완료에 이어 **Phase 4 첫 항목 SM-2 간격 반복 복습 로컬 구현 완료**. 레슨·복습 풀이마다 문제별 SM-2 상태를 갱신하고, 홈 복습 배너(due)→`/review` 세션→완료까지 실동작. 검증: vitest 56개 + 모바일 e2e 62개(학습) + 9개(복습) + Admin e2e 15개. **이번 세션 커밋은 아직 푸시 전** (사용자 명시 요청 시 푸시).
+Phase 0 → 1 → 2 → 3(로컬) 완료에 이어 **Phase 4 첫 항목 SM-2 간격 반복 복습 로컬 구현 완료**. 레슨·복습 풀이마다 문제별 SM-2 상태를 갱신하고, 홈 복습 배너(due)→`/review` 세션→완료까지 실동작. 검증: vitest 56개 + 모바일 e2e 62개(학습) + 9개(복습) + Admin e2e 15개. **`origin/main` 푸시 완료**.
 
 ## Completed This Session (Phase 4 — SM-2 복습)
 
@@ -58,7 +58,7 @@ Phase 0 → 1 → 2 → 3(로컬) 완료에 이어 **Phase 4 첫 항목 SM-2 간
 - **개발 환경 기동**: `supabase start` → `pnpm db:migrate` → policies/ SQL 번호순 수동 적용(0001~0003) → `pnpm db:seed`. Admin은 `cp apps/admin/.env.example apps/admin/.env` 후 `pnpm admin`(3100). AI 생성은 .env에 `ANTHROPIC_API_KEY` 추가 시 활성
 - **검증 루틴**: `pnpm typecheck` + `pnpm lint` + `pnpm test`(vitest 56개) + 모바일 e2e(`learning_loop.py` 62개 + `review_loop.py` 9개, Expo web 8081) + Admin e2e(`admin_flow.py`, 3100, 15개). ⚠️ `review_loop.py`는 psql 필요(due_at 백데이트). 새 라우트(`/review`) 추가했으므로 typecheck 전 `pnpm mobile` 잠깐 기동으로 router 타입 재생성됨
 - **게임화·Freemium 수치는 @ted/shared/constants.ts가 단일 소스** — PREMIUM_PLANS·LANG_* 포함. 변경 시 PLAN.md 동기화
-- **푸시 상태**: 직전 세션(Phase 3)까지 `origin/main` 반영·CI 통과. **이번 세션(Phase 4 SM-2) 커밋은 로컬에만 있음 — 사용자가 명시 요청 시 푸시**
+- **푸시 상태**: 이번 세션(Phase 4 SM-2, `20be934`) 포함 `origin/main` 반영 완료
 - **사용자 선호**: 커밋 메시지 한글, 푸시는 명시 요청 시만, 미확정 항목(앱 이름 U2, Premium 가격 등)은 구현 전 확인
 
 ## Files Modified This Session
