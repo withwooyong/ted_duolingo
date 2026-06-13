@@ -56,6 +56,8 @@ export function useCompleteOnboarding() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['user-languages'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      // 스킬 트리는 활성 언어쌍에 의존 — 온보딩 직후 재조회
+      queryClient.invalidateQueries({ queryKey: ['skill-tree'] });
     },
   });
 }

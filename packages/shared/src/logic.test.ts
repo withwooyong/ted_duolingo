@@ -4,10 +4,12 @@ import { MAX_HEARTS, PERFECT_BONUS_XP } from './constants';
 import {
   consumeHeart,
   earnedBadgeKeys,
+  isPremiumActive,
   leagueDaysLeft,
   lessonXp,
   localDateString,
   nextStreak,
+  premiumExpiryDate,
   refillHearts,
   resolveLeagueOutcome,
   weekStartDate,
@@ -223,5 +225,40 @@ describe('earnedBadgeKeys', () => {
         leaguePromoted: true,
       }),
     ).toEqual(['first_lesson', 'streak_3', 'streak_7', 'xp_500', 'perfect_lesson', 'league_promote']);
+  });
+});
+
+describe('isPremiumActive', () => {
+  const future = new Date(T0 + 24 * HOUR).toISOString();
+  const past = new Date(T0 - 24 * HOUR).toISOString();
+
+  it('플래그가 꺼져 있으면 비활성', () => {
+    expect(isPremiumActive(false, future, T0)).toBe(false);
+  });
+
+  it('만료일이 미래면 활성', () => {
+    expect(isPremiumActive(true, future, T0)).toBe(true);
+  });
+
+  it('만료일이 지났으면 비활성', () => {
+    expect(isPremiumActive(true, past, T0)).toBe(false);
+  });
+
+  it('만료일이 없으면 플래그만 따른다', () => {
+    expect(isPremiumActive(true, null, T0)).toBe(true);
+  });
+});
+
+describe('premiumExpiryDate', () => {
+  it('개월 수를 더한다 (월간·연간)', () => {
+    const from = new Date('2026-06-13T00:00:00Z');
+    expect(premiumExpiryDate(from, 1).toISOString()).toBe('2026-07-13T00:00:00.000Z');
+    expect(premiumExpiryDate(from, 12).toISOString()).toBe('2027-06-13T00:00:00.000Z');
+  });
+
+  it('원본 Date를 변경하지 않는다', () => {
+    const from = new Date('2026-06-13T00:00:00Z');
+    premiumExpiryDate(from, 1);
+    expect(from.toISOString()).toBe('2026-06-13T00:00:00.000Z');
   });
 });

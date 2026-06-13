@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { AdBanner } from '@/components/ad-banner';
 import { Confetti } from '@/components/confetti';
 
 interface EarnedBadgeParam {
@@ -73,8 +74,13 @@ export default function LessonCompleteScreen() {
         </Reveal>
       )}
 
+      {/* 무료 사용자 광고 자리 (Premium은 미표시) — PLAN.md §3.4 */}
+      <Reveal delay={900} className="w-full">
+        <AdBanner />
+      </Reveal>
+
       <Pressable
-        className="mt-12 w-full items-center rounded-2xl bg-brand py-4 active:opacity-80"
+        className="mt-8 w-full items-center rounded-2xl bg-brand py-4 active:opacity-80"
         onPress={() => router.dismissTo('/(tabs)')}
         testID="complete-continue"
       >

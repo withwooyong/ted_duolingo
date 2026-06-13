@@ -126,6 +126,7 @@ with sync_playwright() as p:
     new_badges = tid(page, 'new-badges').inner_text()
     check('완료: 첫 레슨 배지', '첫 레슨' in new_badges)
     check('완료: 퍼펙트 레슨 배지', '퍼펙트 레슨' in new_badges)
+    check('완료: 광고 배너 표시 (무료)', tid(page, 'ad-banner').count() == 1)
     shot(page, '10_complete')
     tid(page, 'complete-continue').click()
 
@@ -157,6 +158,7 @@ with sync_playwright() as p:
     print('9) 프로필 탭 (통계·배지)')
     page.get_by_text('프로필', exact=True).click()
     page.wait_for_selector('[data-testid="profile-stats"]', timeout=30000)
+    page.wait_for_selector('[data-testid="badge-first_lesson-earned"]', timeout=30000)  # 배지 쿼리 로딩 대기
     stats = tid(page, 'profile-stats').inner_text()
     check('프로필: 스트릭 1일', '1일' in stats)
     check('프로필: 총 XP 15', '15' in stats)
@@ -188,6 +190,100 @@ with sync_playwright() as p:
     hearts = tid(page, 'lesson-hearts').inner_text()
     check('오답 후 하트 4', '4' in hearts)
     shot(page, '12_wrong_heart')
+
+    print('12) 언어 추가 시도 (무료 1개 제한) → 페이월')
+    page.goto(BASE)  # 진행 중 레슨 이탈 (저장 안 됨)
+    page.wait_for_selector('[data-testid="hud-lang"]', timeout=60000)
+    tid(page, 'hud-lang').click()
+    page.wait_for_selector('[data-testid="lang-ja"]', timeout=30000)
+    check('언어 화면: 영어 학습 중', tid(page, 'lang-active-en').count() == 1)
+    check('언어 화면: 일본어 Premium 잠금', '🔒' in tid(page, 'lang-ja').inner_text())
+    shot(page, '16_languages_gated')
+    tid(page, 'lang-ja').click()  # 무료 한도 초과 → 페이월로
+    page.wait_for_selector('[data-testid="premium-paywall"]', timeout=30000)
+    check('페이월: 비교 테이블 표시', '무제한' in tid(page, 'premium-paywall').inner_text())
+    shot(page, '17_paywall')
+
+    print('13) mock 구독 (연간) → Premium 활성')
+    tid(page, 'plan-yearly').click()
+    tid(page, 'premium-purchase').click()
+    page.wait_for_selector('[data-testid="premium-active"]', timeout=30000)
+    check('구독: PREMIUM 상태 전환', 'PREMIUM 구독 중' in tid(page, 'premium-active').inner_text())
+    check('구독: 만료일 표시', '까지 이용 가능' in tid(page, 'premium-expires').inner_text())
+    shot(page, '18_premium_active')
+    tid(page, 'premium-close').click()  # 언어 화면으로 복귀
+
+    print('14) 언어 전환 ko→ja (Premium)')
+    page.wait_for_selector('[data-testid="lang-ja"]', timeout=30000)
+    tid(page, 'lang-ja').click()  # 이제 추가·전환 성공 → 홈 복귀
+    page.wait_for_selector('text=기초 회화 — 일본어', timeout=30000)  # 스킬 트리 재조회 대기
+    check('홈: 일본어 단원 배너', '일본어' in tid(page, 'unit-banner').inner_text())
+    check('홈: HUD 하트 무제한(∞)', '∞' in tid(page, 'hud-hearts').inner_text())
+    check('홈: 일본어 스킬 2개', tid(page, 'skill-1').count() == 1 and tid(page, 'skill-2').count() == 1 and tid(page, 'skill-3').count() == 0)
+    check('홈: 이어하기 = 기본 인사', '기본 인사' in tid(page, 'continue-button').inner_text())
+    shot(page, '19_home_ja')
+
+    print('15) 일본어 레슨 (6문제, Premium 하트 ∞)')
+    tid(page, 'continue-button').click()
+    # 15-1 듣기: こんにちは。
+    page.wait_for_selector('[data-testid="speaker"]')
+    check('레슨: 하트 ∞ 표시', '∞' in tid(page, 'lesson-hearts').inner_text())
+    page.get_by_text('こんにちは。', exact=True).click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+    # 15-2 빈칸: ござい
+    page.wait_for_selector('[data-testid="chip-ござい"]')
+    tid(page, 'chip-ござい').click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+    # 15-3 짝 맞추기
+    page.wait_for_selector('[data-testid="match-ko-0"]')
+    for i in range(4):
+        tid(page, f'match-ko-{i}').click()
+        tid(page, f'match-en-{i}').click()
+    feedback_continue()
+    # 15-4 단어 배열: はじめまして よろしく おねがいします
+    page.wait_for_selector('[data-testid="bank-word-はじめまして"]')
+    for w in ['はじめまして', 'よろしく', 'おねがいします']:
+        tid(page, f'bank-word-{w}').click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+    # 15-5 독해: 처음 만나 인사한다
+    page.wait_for_selector('text=두 사람은 지금 무엇을 하고 있나요?')
+    page.get_by_text('처음 만나 인사한다', exact=True).click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+    # 15-6 듣기: ありがとうございます。
+    page.wait_for_selector('[data-testid="speaker"]')
+    page.get_by_text('ありがとうございます。', exact=True).click()
+    tid(page, 'check-button').click()
+    feedback_continue()
+
+    print('16) 일본어 레슨 완료 (Premium — 광고 없음)')
+    page.wait_for_selector('[data-testid="complete-title"]', timeout=30000)
+    page.wait_for_timeout(1600)
+    check('완료: 퍼펙트 (ja)', '퍼펙트' in tid(page, 'complete-title').inner_text())
+    check('완료: 광고 배너 없음 (Premium)', tid(page, 'ad-banner').count() == 0)
+    shot(page, '20_complete_ja')
+    tid(page, 'complete-continue').click()
+
+    print('17) 언어 재전환 ja→en (진행 보존)')
+    page.wait_for_selector('[data-testid="hud-lang"]', timeout=30000)
+    tid(page, 'hud-lang').click()
+    page.wait_for_selector('[data-testid="lang-active-ja"]', timeout=30000)
+    check('언어 화면: 일본어 학습 중', tid(page, 'lang-active-ja').count() == 1)
+    tid(page, 'lang-en').click()
+    page.wait_for_selector('text=기초 회화 — 영어', timeout=30000)  # 스킬 트리 재조회 대기
+    check('홈: 영어 복귀', '영어' in tid(page, 'unit-banner').inner_text())
+    check('홈: 영어 진행 보존 (안부 묻기)', '안부 묻기' in tid(page, 'continue-button').inner_text())
+    shot(page, '21_home_en_back')
+
+    print('18) 프로필 (PREMIUM 배지·국기)')
+    page.get_by_text('프로필', exact=True).click()
+    page.wait_for_selector('[data-testid="profile-stats"]', timeout=30000)
+    check('프로필: PREMIUM 배지', tid(page, 'premium-badge').count() == 1)
+    check('프로필: 구독 관리 버튼', '구독 관리' in tid(page, 'profile-premium').inner_text())
+    shot(page, '22_profile_premium')
 
     if errors:
         print('\n⚠️ 페이지 JS 에러:')

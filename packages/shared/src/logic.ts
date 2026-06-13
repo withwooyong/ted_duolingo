@@ -76,6 +76,28 @@ export function localDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * 프리미엄 활성 여부 (PLAN.md §3.4).
+ * 만료일이 없으면 플래그만 따른다 — mock 구독은 만료일을 항상 기록하고,
+ * RevenueCat 전환 후에는 웹훅이 플래그를 갱신한다.
+ */
+export function isPremiumActive(
+  isPremium: boolean,
+  premiumExpiresAt: string | null,
+  now: number,
+): boolean {
+  if (!isPremium) return false;
+  if (!premiumExpiresAt) return true;
+  return Date.parse(premiumExpiresAt) > now;
+}
+
+/** 구독 만료 시각 — 시작 시각에 개월 수를 더한다 (mock 결제·만료 표시용) */
+export function premiumExpiryDate(from: Date, months: number): Date {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
 /* ── 리그 (PLAN.md §3.3 — 주간 XP, 월요일 시작) ───────────────── */
 
 const DAY_MS = 24 * 60 * 60 * 1000;

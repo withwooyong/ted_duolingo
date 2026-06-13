@@ -31,6 +31,7 @@ export default function RootLayout() {
           <Stack.Screen name="lesson/[id]/index" options={{ gestureEnabled: false }} />
           <Stack.Screen name="lesson/[id]/complete" options={{ gestureEnabled: false }} />
           <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="languages" options={{ presentation: 'modal' }} />
           <Stack.Screen name="settings" />
         </Stack.Protected>
         <Stack.Protected guard={!session}>

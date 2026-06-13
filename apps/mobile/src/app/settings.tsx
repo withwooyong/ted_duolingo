@@ -79,6 +79,42 @@ export default function SettingsScreen() {
         })}
       </View>
 
+      {/* 학습 언어 */}
+      <Text className="mt-7 text-xs font-extrabold uppercase text-ink-sub">학습 언어</Text>
+      <Pressable
+        className="mt-2 flex-row items-center justify-between rounded-2xl border-2 border-line px-4 py-3.5 active:opacity-70"
+        onPress={() => router.push('/languages')}
+        testID="settings-languages"
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-base font-bold">언어 전환·추가</Text>
+          <Text className="mt-0.5 text-xs font-semibold text-ink-sub">
+            무료는 1개, Premium은 무제한
+          </Text>
+        </View>
+        <Text className="text-lg text-ink-sub">›</Text>
+      </Pressable>
+
+      {/* 구독 */}
+      <Text className="mt-7 text-xs font-extrabold uppercase text-ink-sub">구독</Text>
+      <Pressable
+        className="mt-2 flex-row items-center justify-between rounded-2xl border-2 border-line px-4 py-3.5 active:opacity-70"
+        onPress={() => router.push('/premium')}
+        testID="settings-premium"
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-base font-bold">
+            {profile?.isPremium ? '⚡ Premium 구독 중' : 'Ted Premium'}
+          </Text>
+          <Text className="mt-0.5 text-xs font-semibold text-ink-sub">
+            {profile?.isPremium
+              ? '구독 정보 확인·해지'
+              : '무제한 하트 · 광고 제거 · 학습 언어 무제한'}
+          </Text>
+        </View>
+        <Text className="text-lg text-ink-sub">›</Text>
+      </Pressable>
+
       {/* 스트릭 알림 */}
       <Text className="mt-7 text-xs font-extrabold uppercase text-ink-sub">알림</Text>
       <View className="mt-2 flex-row items-center justify-between rounded-2xl border-2 border-line px-4 py-3.5">

@@ -1,8 +1,8 @@
 /**
- * 시드 데이터 — 한국어→영어 1단원 (기초 회화)
+ * 시드 데이터 — 1단원 (기초 회화): ko→en 4스킬 + ko→ja 2스킬
  *
  * PLAN.md Phase 0: 시드 콘텐츠는 AI가 아닌 수동 제작 (D13).
- * 4스킬 × 1~2레슨, 5종 문제 유형 전부 포함 — End-to-end 검증용.
+ * 언어쌍별 5종 문제 유형 전부 포함 — End-to-end 검증용.
  *
  * 주의: 실행 시 해당 언어쌍의 기존 콘텐츠(스킬·레슨·문제)를 지우고 다시 만든다.
  * (Cascade로 user_progress도 함께 삭제되므로 운영 DB에서는 사용 금지)
@@ -58,9 +58,10 @@ const order = (
   words: string[],
   answer: string,
   explanation: string,
+  langLabel = '영어',
 ): SeedExercise => ({
   type: 'ORDER_WORDS',
-  prompt: `"${promptKo}"를 영어로 만드세요`,
+  prompt: `"${promptKo}"를 ${langLabel}로 만드세요`,
   payload: { type: 'ORDER_WORDS', words, answer },
   explanation,
 });
@@ -285,6 +286,111 @@ const UNIT_1: SeedSkill[] = [
   },
 ];
 
+/* ── 1단원: 기초 회화 (ko→ja) ─────────────────────────────── */
+const UNIT_1_JA: SeedSkill[] = [
+  {
+    title: '인사하기',
+    icon: '👋',
+    description: '일본어 기본 인사',
+    lessons: [
+      {
+        title: '기본 인사',
+        exercises: [
+          listen(
+            'こんにちは。',
+            ['こんにちは。', 'こんばんは。', 'さようなら。', 'すみません。'],
+            '"こんにちは" — 안녕하세요 (낮 인사예요).',
+          ),
+          fill(
+            ['おはよう', null, 'ます。'],
+            ['ござい', 'あり', 'です', 'ません'],
+            'ござい',
+            '"おはようございます" — 정중한 아침 인사예요.',
+          ),
+          match(
+            [
+              ['안녕하세요', 'こんにちは'],
+              ['감사합니다', 'ありがとう'],
+              ['미안합니다', 'すみません'],
+              ['안녕히 가세요', 'さようなら'],
+            ],
+            '기본 인사 표현 4가지를 모두 맞췄어요!',
+          ),
+          order(
+            '처음 뵙겠습니다, 잘 부탁합니다',
+            ['はじめまして', 'よろしく', 'おねがいします', 'さようなら', 'こんばんは'],
+            'はじめまして よろしく おねがいします',
+            '"はじめまして、よろしくおねがいします" — 첫 만남 인사예요.',
+            '일본어',
+          ),
+          mcq(
+            'A: はじめまして、トムです。\nB: こんにちは、ミナです。',
+            '두 사람은 지금 무엇을 하고 있나요?',
+            ['처음 만나 인사한다', '음식을 주문한다', '길을 묻는다', '작별 인사를 한다'],
+            '"はじめまして"로 서로를 소개하는 첫 만남 장면이에요.',
+          ),
+          listen(
+            'ありがとうございます。',
+            ['ありがとうございます。', 'すみませんでした。', 'おはようございます。', 'さようなら。'],
+            '"ありがとうございます" — 감사합니다.',
+          ),
+        ],
+      },
+    ],
+  },
+  {
+    title: '음식 주문',
+    icon: '🍣',
+    description: '식당에서 주문하기',
+    lessons: [
+      {
+        title: '주문하기',
+        exercises: [
+          fill(
+            ['これ', null, 'ください。'],
+            ['を', 'が', 'は', 'に'],
+            'を',
+            '"これをください" — 이것을 주세요. (を는 목적격 조사)',
+          ),
+          match(
+            [
+              ['물', 'みず'],
+              ['밥', 'ごはん'],
+              ['생선', 'さかな'],
+              ['차', 'おちゃ'],
+            ],
+            '기초 음식 단어 4개예요.',
+          ),
+          order(
+            '이것을 주세요',
+            ['これ', 'を', 'ください', 'たべます', 'みず'],
+            'これ を ください',
+            '"これをください" — 가게에서 물건을 가리키며 쓰는 표현이에요.',
+            '일본어',
+          ),
+          mcq(
+            'A: いらっしゃいませ。\nB: すしを ください。',
+            'B가 주문한 것은 무엇인가요?',
+            ['초밥', '라면', '커피', '빵'],
+            '"すし" = 초밥이에요.',
+          ),
+          listen(
+            'いくらですか。',
+            ['いくらですか。', 'いかがですか。', 'どこですか。', 'なんですか。'],
+            '"いくらですか" — 얼마예요? (가격을 물을 때)',
+          ),
+        ],
+      },
+    ],
+  },
+];
+
+/* ── 언어쌍별 콘텐츠 (PLAN.md §9 — 새 언어쌍은 여기에 추가) ── */
+const CONTENT = [
+  { sourceLang: 'ko', targetLang: 'en', displayName: '한국어 → 영어', skills: UNIT_1 },
+  { sourceLang: 'ko', targetLang: 'ja', displayName: '한국어 → 일본어', skills: UNIT_1_JA },
+];
+
 /* ── 배지 (PLAN.md §3.3) ─────────────────────────────────── */
 const BADGES = [
   { key: 'first_lesson', title: '첫 레슨', icon: '🚀', condition: '첫 레슨 완료' },
@@ -347,7 +453,7 @@ async function seedLeagueBots() {
 }
 
 async function main() {
-  console.log('🌱 시드 시작 — ko→en 기초 회화');
+  console.log('🌱 시드 시작 — 기초 회화 (ko→en, ko→ja)');
 
   await seedLeagueBots();
 
@@ -357,54 +463,58 @@ async function main() {
   }
   console.log(`  배지 ${BADGES.length}개 upsert 완료`);
 
-  // 언어쌍
-  const pair = await prisma.languagePair.upsert({
-    where: { sourceLang_targetLang: { sourceLang: 'ko', targetLang: 'en' } },
-    create: { sourceLang: 'ko', targetLang: 'en', displayName: '한국어 → 영어' },
-    update: {},
-  });
-
-  // 기존 콘텐츠 삭제 후 재생성 (개발용 — Cascade로 진행 기록도 삭제됨)
-  const removed = await prisma.skill.deleteMany({ where: { languagePairId: pair.id } });
-  if (removed.count > 0) console.log(`  기존 스킬 ${removed.count}개 삭제 (재생성)`);
-
-  let lessonCount = 0;
-  let exerciseCount = 0;
-  for (const [si, skill] of UNIT_1.entries()) {
-    await prisma.skill.create({
-      data: {
-        languagePairId: pair.id,
-        order: si + 1,
-        title: skill.title,
-        icon: skill.icon,
-        description: skill.description,
-        lessons: {
-          create: skill.lessons.map((lesson, li) => {
-            lessonCount++;
-            exerciseCount += lesson.exercises.length;
-            return {
-              order: li + 1,
-              title: lesson.title,
-              xpReward: 10,
-              exercises: {
-                create: lesson.exercises.map((ex, ei) => ({
-                  order: ei + 1,
-                  type: ex.type,
-                  prompt: ex.prompt,
-                  options: ex.payload as object,
-                  explanation: ex.explanation,
-                  sourceLang: 'ko',
-                  targetLang: 'en',
-                })),
-              },
-            };
-          }),
-        },
-      },
+  for (const { sourceLang, targetLang, displayName, skills } of CONTENT) {
+    const pair = await prisma.languagePair.upsert({
+      where: { sourceLang_targetLang: { sourceLang, targetLang } },
+      create: { sourceLang, targetLang, displayName },
+      update: {},
     });
+
+    // 기존 콘텐츠 삭제 후 재생성 (개발용 — Cascade로 진행 기록도 삭제됨)
+    const removed = await prisma.skill.deleteMany({ where: { languagePairId: pair.id } });
+    if (removed.count > 0)
+      console.log(`  [${sourceLang}→${targetLang}] 기존 스킬 ${removed.count}개 삭제 (재생성)`);
+
+    let lessonCount = 0;
+    let exerciseCount = 0;
+    for (const [si, skill] of skills.entries()) {
+      await prisma.skill.create({
+        data: {
+          languagePairId: pair.id,
+          order: si + 1,
+          title: skill.title,
+          icon: skill.icon,
+          description: skill.description,
+          lessons: {
+            create: skill.lessons.map((lesson, li) => {
+              lessonCount++;
+              exerciseCount += lesson.exercises.length;
+              return {
+                order: li + 1,
+                title: lesson.title,
+                xpReward: 10,
+                exercises: {
+                  create: lesson.exercises.map((ex, ei) => ({
+                    order: ei + 1,
+                    type: ex.type,
+                    prompt: ex.prompt,
+                    options: ex.payload as object,
+                    explanation: ex.explanation,
+                    sourceLang,
+                    targetLang,
+                  })),
+                },
+              };
+            }),
+          },
+        },
+      });
+    }
+    console.log(
+      `  [${sourceLang}→${targetLang}] 스킬 ${skills.length}개 / 레슨 ${lessonCount}개 / 문제 ${exerciseCount}개 생성 완료`,
+    );
   }
 
-  console.log(`  스킬 ${UNIT_1.length}개 / 레슨 ${lessonCount}개 / 문제 ${exerciseCount}개 생성 완료`);
   console.log('✅ 시드 완료');
 }
 

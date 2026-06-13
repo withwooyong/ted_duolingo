@@ -84,6 +84,8 @@ export interface ExerciseDto {
   payload: ExercisePayload;
   audioUrl: string | null;
   explanation: string | null;
+  /** 학습어 코드 (예: 'en') — LISTEN_SELECT의 TTS 로케일 선택용 */
+  targetLang: string;
 }
 
 export interface LessonDto {
@@ -118,6 +120,8 @@ export interface ProfileDto {
   weeklyXp: number;
   dailyGoalXp: number;
   isPremium: boolean;
+  /** 구독 만료 시각 (ISO) — mock 구독은 항상 기록, 없으면 무기한 */
+  premiumExpiresAt: string | null;
   lastStudyDate: string | null;
 }
 

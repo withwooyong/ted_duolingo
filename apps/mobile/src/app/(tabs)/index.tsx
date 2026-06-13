@@ -1,3 +1,4 @@
+import { LANG_FLAGS, LANG_LABELS } from '@ted/shared';
 import { Redirect, router } from 'expo-router';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -37,7 +38,11 @@ export default function HomeScreen() {
     <ScrollView className="flex-1 bg-white">
       {/* HUD */}
       <View className="flex-row items-center justify-between border-b-2 border-line px-5 py-4">
-        <Text className="text-base font-extrabold">🇺🇸</Text>
+        <Pressable onPress={() => router.push('/languages')} hitSlop={8} testID="hud-lang">
+          <Text className="text-base font-extrabold">
+            {LANG_FLAGS[tree?.targetLang ?? ''] ?? '🌍'}
+          </Text>
+        </Pressable>
         <Text className="text-base font-extrabold text-orange-500" testID="hud-streak">
           🔥 {profile?.streak ?? '–'}
         </Text>
@@ -68,7 +73,9 @@ export default function HomeScreen() {
       {/* 단원 배너 */}
       <View className="mx-5 mt-4 rounded-2xl bg-brand p-4">
         <Text className="text-xs font-bold text-white/80">1단원</Text>
-        <Text className="mt-1 text-lg font-extrabold text-white">기초 회화 — 영어</Text>
+        <Text className="mt-1 text-lg font-extrabold text-white" testID="unit-banner">
+          기초 회화 — {LANG_LABELS[tree?.targetLang ?? ''] ?? '...'}
+        </Text>
       </View>
 
       {/* 스킬 트리 */}

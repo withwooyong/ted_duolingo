@@ -47,6 +47,20 @@ export const BADGE_XP_MILESTONE = 500;
 /* ── Freemium ── */
 export const FREE_MAX_LEARNING_LANGS = 1;
 
+/* ── Premium 구독 플랜 (PLAN.md §3.4 — 가격은 임시값, 스토어 제출 전 확정) ── */
+export const PREMIUM_PLANS = [
+  { id: 'monthly', label: '월간', months: 1, priceKrw: 9900, note: '언제든 해지 가능' },
+  { id: 'yearly', label: '연간', months: 12, priceKrw: 79000, note: '월 6,600원꼴 · 33% 할인' },
+] as const;
+export type PremiumPlan = (typeof PREMIUM_PLANS)[number];
+export type PremiumPlanId = PremiumPlan['id'];
+
+/* ── 언어 메타 (PLAN.md §9 — 언어쌍 추가 시 함께 갱신) ── */
+export const LANG_FLAGS: Record<string, string> = { ko: '🇰🇷', en: '🇺🇸', ja: '🇯🇵' };
+export const LANG_LABELS: Record<string, string> = { ko: '한국어', en: '영어', ja: '일본어' };
+/** TTS(expo-speech) 로케일 — LISTEN_SELECT의 targetLang 기준 */
+export const SPEECH_LOCALES: Record<string, string> = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP' };
+
 /* ── 레슨 구성 (PLAN.md §3.1 — 5~8문제, 5분 이내) ── */
 export const LESSON_MIN_EXERCISES = 5;
 export const LESSON_MAX_EXERCISES = 8;

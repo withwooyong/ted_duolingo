@@ -1,11 +1,10 @@
-import { DAILY_GOAL_OPTIONS } from '@ted/shared';
-import { useQuery } from '@tanstack/react-query';
+import { DAILY_GOAL_OPTIONS, LANG_FLAGS } from '@ted/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 
+import { useLanguagePairs } from '@/hooks/use-languages';
 import { useCompleteOnboarding } from '@/hooks/use-onboarding';
-import { supabase } from '@/lib/supabase';
 
 const GOAL_LABELS: Record<number, [string, string]> = {
   10: ['🌱', '가볍게'],
@@ -23,17 +22,7 @@ export default function OnboardingScreen() {
   const [goal, setGoal] = useState<number | null>(null);
   const complete = useCompleteOnboarding();
 
-  const { data: pairs } = useQuery({
-    queryKey: ['language-pairs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('language_pairs')
-        .select('id, source_lang, target_lang, display_name')
-        .eq('source_lang', 'ko');
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: pairs } = useLanguagePairs();
 
   const finish = async () => {
     if (!pairId || !goal) return;
@@ -72,7 +61,7 @@ export default function OnboardingScreen() {
                 onPress={() => setPairId(p.id)}
                 testID={`pair-${p.target_lang}`}
               >
-                <Text className="text-2xl">{p.target_lang === 'en' ? '🇺🇸' : '🌍'}</Text>
+                <Text className="text-2xl">{LANG_FLAGS[p.target_lang] ?? '🌍'}</Text>
                 <Text
                   className={`text-lg font-bold ${pairId === p.id ? 'text-sky-dark' : 'text-ink'}`}
                 >
@@ -80,10 +69,6 @@ export default function OnboardingScreen() {
                 </Text>
               </Pressable>
             ))}
-            <View className="flex-row items-center gap-3 rounded-2xl border-2 border-line px-4 py-4 opacity-40">
-              <Text className="text-2xl">🇯🇵</Text>
-              <Text className="text-lg font-bold">한국어 → 일본어 (준비 중)</Text>
-            </View>
           </View>
           <Pressable
             className="mt-8 items-center rounded-2xl bg-brand py-4 active:opacity-80 disabled:opacity-40"

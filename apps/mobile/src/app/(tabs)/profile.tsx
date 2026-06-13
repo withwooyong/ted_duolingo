@@ -1,14 +1,16 @@
-import { LEAGUE_TIER_ICONS, LEAGUE_TIER_LABELS } from '@ted/shared';
+import { LANG_FLAGS, LEAGUE_TIER_ICONS, LEAGUE_TIER_LABELS } from '@ted/shared';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useBadges, useLessonsDone, type BadgeItem } from '@/hooks/use-league';
 import { useProfile } from '@/hooks/use-profile';
+import { useSkillTree } from '@/hooks/use-skill-tree';
 import { useAuth } from '@/stores/auth';
 
 /** 프로필 — 통계·배지·구독 (prototype/index.html 디자인 기준) */
 export default function ProfileScreen() {
   const { data: profile } = useProfile();
+  const { data: tree } = useSkillTree();
   const { data: badges } = useBadges();
   const { data: lessonsDone } = useLessonsDone();
   const signOut = useAuth((s) => s.signOut);
@@ -26,10 +28,12 @@ export default function ProfileScreen() {
           <Text className="text-xl font-extrabold" testID="profile-name">
             {profile?.displayName ?? '...'}
           </Text>
-          <Text className="text-sm font-semibold text-ink-sub">🇰🇷 → 🇺🇸</Text>
+          <Text className="text-sm font-semibold text-ink-sub">
+            {LANG_FLAGS[profile?.nativeLang ?? 'ko']} → {LANG_FLAGS[tree?.targetLang ?? ''] ?? '🌍'}
+          </Text>
         </View>
         {profile?.isPremium && (
-          <View className="rounded-full bg-sky px-3 py-1">
+          <View className="rounded-full bg-sky px-3 py-1" testID="premium-badge">
             <Text className="text-xs font-extrabold text-white">⚡ PREMIUM</Text>
           </View>
         )}
@@ -59,8 +63,10 @@ export default function ProfileScreen() {
       {/* 액션 */}
       <View className="mt-8 pb-12">
         <Link href="/premium" asChild>
-          <Pressable className="items-center rounded-2xl bg-sky py-4 active:opacity-80">
-            <Text className="text-base font-extrabold text-white">⚡ Premium 업그레이드</Text>
+          <Pressable className="items-center rounded-2xl bg-sky py-4 active:opacity-80" testID="profile-premium">
+            <Text className="text-base font-extrabold text-white">
+              {profile?.isPremium ? '⚡ Premium 구독 관리' : '⚡ Premium 업그레이드'}
+            </Text>
           </Pressable>
         </Link>
         <Link href="/settings" asChild>

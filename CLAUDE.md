@@ -55,13 +55,15 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 - 시드의 LISTEN/MCQ 정답은 `options[0]` 고정 — 보기 셔플은 컴포넌트 표시 시점(`shuffled()`)
 - **Reanimated entering/exiting 프리셋(FadeIn 등)은 Expo web에서 동작하지 않음** — 요소가 안 보이는 상태로 멈춘다. shared value 직접 구동으로 구현할 것 (`complete.tsx`의 `Reveal`, `confetti.tsx` 참조)
 - 리그 주간 마감은 클라이언트가 새 주 첫 진입 시 수행 (`lib/gamification.ts`의 `ensureLeagueEntry`) — 주간 XP는 profiles가 아닌 league_entries 행 기준으로 누적
+- **새 라우트 파일 추가 후 typecheck는 Expo dev 서버가 `.expo/types/router.d.ts`를 재생성해야 통과** — typed routes가 stale이면 `router.push('/새경로')`가 타입 에러를 낸다 (`pnpm mobile` 잠깐 기동으로 해결)
 
 ## 핵심 도메인 개념
 
 - **문제 유형 5종** (enum 값 고정): `LISTEN_SELECT`, `FILL_BLANK`, `MATCH_PAIRS`, `ORDER_WORDS`, `COMPREHENSION_MCQ`. 각각 별도 컴포넌트로 구현. Phase 2에 Shadowing(STT)·Free Translation 추가
 - **콘텐츠 계층**: LanguagePair → Skill → Lesson(5~8문제) → Exercise. 시드의 LISTEN/MCQ 정답은 항상 `options[0]` — 보기 섞기는 앱 표시 시점에 한다
 - **게임화 규칙 수치는 `@ted/shared/constants.ts`가 단일 소스** (하트 5개·시간당 충전, 주간 리그 10명 코호트·상하위 3명 승급/강등, 레슨 10XP + 퍼펙트 5XP). 수치 변경 시 PLAN.md도 갱신
-- **Freemium 경계**: 무료는 언어 1개·하트 제한·광고 포함 (PLAN.md §3.4 기준)
+- **Freemium 경계**: 무료는 언어 1개·하트 제한·광고 포함 (PLAN.md §3.4). 구독은 mock 결제(D16) — `hooks/use-premium.ts`가 profiles의 `is_premium`·`premium_expires_at`을 직접 갱신, RevenueCat 전환 시 이 훅만 교체. 광고는 `components/ad-banner.tsx` placeholder
+- **활성 학습 언어쌍은 user_languages.is_active 기준 1개** (D17) — 스킬 트리·홈 배너·TTS 로케일이 이를 따른다. 전환·추가는 `hooks/use-languages.ts` + `/languages` 화면 (무료 한도 초과 시 페이월로)
 - **게임화 수치의 서버 측 검증(Edge Function)은 Phase 2로 미룸** — MVP는 클라이언트가 직접 update (RLS 주석 참조)
 
 ## 개발 원칙

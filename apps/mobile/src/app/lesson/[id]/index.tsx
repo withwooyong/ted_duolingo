@@ -92,8 +92,9 @@ export default function LessonScreen() {
   const next = async () => {
     // 하트 소진 → 레슨 중단 (PLAN.md §3.3 — 0이면 대기 또는 프리미엄)
     if (!play.lastCorrect && hearts !== null && hearts <= 0) {
-      Alert.alert('하트를 모두 사용했어요 💔', '하트는 시간당 1개씩 충전됩니다.', [
+      Alert.alert('하트를 모두 사용했어요 💔', '하트는 시간당 1개씩 충전됩니다.\nPremium은 하트 무제한!', [
         { text: '홈으로', onPress: () => router.back() },
+        { text: '⚡ Premium 보기', onPress: () => router.replace('/premium') },
       ]);
       return;
     }
@@ -162,6 +163,7 @@ export default function LessonScreen() {
         {exercise.payload.type === 'LISTEN_SELECT' && (
           <ListenSelect
             payload={exercise.payload}
+            targetLang={exercise.targetLang}
             value={answer}
             onChange={setAnswer}
             disabled={play.phase === 'feedback'}
