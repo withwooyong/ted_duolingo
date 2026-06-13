@@ -2,7 +2,7 @@
 
 > Last updated: 2026-06-14 (KST)
 > Branch: `main`
-> Latest commit: (이번 세션 — Phase 4 오프라인 복습 큐 D24) — **로컬 커밋, 푸시 대기**
+> Latest commit: `741feb0` - Phase 4: 오프라인 복습 큐 — 시점 동결 스냅샷 + 의도 재실행 (D24). **로컬 커밋, `origin/main` 푸시 대기**
 > Repo: https://github.com/withwooyong/ted_duolingo (**public**)
 
 ## Current Status
