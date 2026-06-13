@@ -7,6 +7,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-12] Phase 2 — 풀 게임화
+
+### Added
+- 리그/주간 랭킹 — 코호트 배정(10명)·클라이언트 주간 마감(순위 확정→승급/강등, D14)·리그 화면(티어 방패·순위표·승급/강등 구간) (`7f68948`)
+- 리그 도메인 헬퍼 `lib/gamification.ts` — `ensureLeagueEntry`(새 주 첫 진입 시 직전 주 마감)·`awardBadges` (`7f68948`)
+- 배지 6종 — `@ted/shared` `earnedBadgeKeys` 순수 판정 + 레슨 완료·리그 승급 시 수여, 완료 화면 "새 배지 획득!" 표시 (`7f68948`)
+- 프로필 화면 — 통계 그리드(스트릭·총 XP·완료 레슨·현재 리그) + 배지 그리드(잠금/획득) (`7f68948`)
+- 스트릭 알림 — expo-notifications 매일 20시 로컬 리마인더, 설정 토글 (네이티브 전용, 웹 미지원 안내) (`7f68948`)
+- 설정 화면 — 일일 목표 변경(10/20/30 XP) (`7f68948`)
+- 레슨 완료 연출 — Reanimated 컨페티·등장 애니메이션 (D15: Lottie 에셋 확보 시 교체) (`7f68948`)
+- 공유 리그 로직 — `weekStartDate`·`leagueDaysLeft`·`resolveLeagueOutcome` + vitest 38개로 확장(+21) (`7f68948`)
+- 리그 봇 9명 시드(프로토타입 LEAGUE_BOTS 동일, 재시드 시 현재 주차 갱신) + RLS 0002(리그 본인 행 쓰기·프로필 읽기 공개) (`7f68948`)
+- e2e 38개 체크로 확장(+15) — 완료 배지·리그 랭킹·프로필 통계/배지·설정 (`7f68948`)
+
+### Changed
+- 레슨 완료 뮤테이션 — 주간 XP를 profiles가 아닌 league_entries 행 기준으로 누적, 배지 판정·수여 통합 (`7f68948`)
+- PLAN.md v0.4 — D14(리그 클라이언트 마감)·D15(완료 연출 Reanimated) 추가, Phase 2 체크리스트 완료 (`7f68948`)
+- CLAUDE.md — Reanimated entering 프리셋 웹 미동작·리그 주간 마감 방식 함정 추가 (`7f68948`)
+
+### Fixed
+- Reanimated entering 프리셋(FadeIn 등)이 Expo web에서 요소가 보이지 않는 상태로 멈추는 문제 — shared value 직접 구동(`Reveal`·`Confetti`)으로 교체 (`7f68948`)
+
+---
+
 ## [2026-06-12] Phase 0~1 — 프로토타입 · 기반 구축 · 핵심 학습 루프
 
 ### Added
