@@ -64,8 +64,8 @@ Phase 0 → 1 → 2 → 3(로컬) 완료에 이어 **Phase 4 첫 항목 SM-2 간
 ## Files Modified This Session
 
 ```
-9097423 (Phase 3 1/2): 24 files, +839 -109 — premium/languages 화면, use-premium/use-languages 훅,
-        ad-banner, 스킬 트리 활성 언어쌍 전환, 시드 ko→ja, shared 구독·언어 로직, e2e +24
-699b171 (Phase 3 2/2): 19 files, +1202 -2 — apps/admin 신규(서버·생성·뷰·e2e),
-        ContentDraft 마이그레이션, RLS 0003, shared draft 검증(+테스트), 루트 admin 스크립트
+20be934 (Phase 4 SM-2 복습): 17 files, +879 -32 — shared sm2Update·상수·테스트(+5),
+        UserReviewState 모델·마이그레이션·RLS 0004, upsertReviewStates(gamification),
+        use-review 훅, /review 화면, 홈 복습 배너, review_loop.py e2e, PLAN/CLAUDE/CHANGELOG
+ce38739 (docs): 1 file — HANDOFF 푸시 상태 현행화
 ```

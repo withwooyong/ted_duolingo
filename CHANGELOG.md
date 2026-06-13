@@ -5,17 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ## [Unreleased]
 
+---
+
+## [2026-06-13] Phase 4 — SM-2 간격 반복 복습
+
 ### Added
-- Phase 4 SM-2 간격 반복 복습 (D19) — 레슨·복습 풀이마다 문제별 `UserReviewState`(repetitions·easeFactor·interval·dueAt) 갱신
-- `@ted/shared` 복습 순수 로직 — `sm2Update`(정답=q5·오답=q2 매핑)·`nextReviewDue`·`INITIAL_REVIEW_STATE` + 상수(`REVIEW_BATCH_SIZE`·`REVIEW_XP`·`SM2_*`) + vitest 56개(+5)
-- `UserReviewState` 모델 마이그레이션(`20260613022526_review_state`) + RLS `0004_review_state.sql`(본인 행 read/insert/update). 활성 언어쌍 필터용 `language_pair_id` 비정규화
-- `lib/gamification.ts` `upsertReviewStates` — 직전 상태 조회→SM-2 계산→(사용자×문제) upsert. `useCompleteLesson`이 레슨 완료 시 호출(레슨→스킬 언어쌍 조회)
-- `hooks/use-review.ts` — `useDueReviewCount`(홈 배너)·`useReviewSession`(due 순 최대 10문제)·`useCompleteReview`(SM-2 갱신 + 복습 XP). 복습 XP는 총합(profile.xp)만·주간 리그/일일 목표 제외·하트 무소모
-- `/review` 화면 — 레슨과 같은 5종 컴포넌트로 due 문제 재생, 완료 시 결과(정답 수·XP). 홈 복습 배너(due>0) + 완료 스킬 탭으로 진입
-- 복습 e2e `apps/mobile/e2e/review_loop.py` 9개 체크 — psql로 `due_at` 백데이트 후 배너→세션→완료→홈 반영 검증
+- Phase 4 SM-2 간격 반복 복습 (D19) — 레슨·복습 풀이마다 문제별 `UserReviewState`(repetitions·easeFactor·interval·dueAt) 갱신 (`20be934`)
+- `@ted/shared` 복습 순수 로직 — `sm2Update`(정답=q5·오답=q2 매핑)·`nextReviewDue`·`INITIAL_REVIEW_STATE` + 상수(`REVIEW_BATCH_SIZE`·`REVIEW_XP`·`SM2_*`) + vitest 56개(+5) (`20be934`)
+- `UserReviewState` 모델 마이그레이션(`20260613022526_review_state`) + RLS `0004_review_state.sql`(본인 행 read/insert/update). 활성 언어쌍 필터용 `language_pair_id` 비정규화 (`20be934`)
+- `lib/gamification.ts` `upsertReviewStates` — 직전 상태 조회→SM-2 계산→(사용자×문제) upsert. `useCompleteLesson`이 레슨 완료 시 호출(레슨→스킬 언어쌍 조회) (`20be934`)
+- `hooks/use-review.ts` — `useDueReviewCount`(홈 배너)·`useReviewSession`(due 순 최대 10문제)·`useCompleteReview`(SM-2 갱신 + 복습 XP). 복습 XP는 총합(profile.xp)만·주간 리그/일일 목표 제외·하트 무소모 (`20be934`)
+- `/review` 화면 — 레슨과 같은 5종 컴포넌트로 due 문제 재생, 완료 시 결과(정답 수·XP). 홈 복습 배너(due>0) + 완료 스킬 탭으로 진입 (`20be934`)
+- 복습 e2e `apps/mobile/e2e/review_loop.py` 9개 체크 — psql로 `due_at` 백데이트 후 배너→세션→완료→홈 반영 검증 (`20be934`)
 
 ### Changed
-- 홈 완료 스킬 탭 — "곧 추가" 알림 제거, due>0이면 `/review`로 진입
+- 홈 완료 스킬 탭 — "곧 추가" 알림 제거, due>0이면 `/review`로 진입 (`20be934`)
 
 ---
 
