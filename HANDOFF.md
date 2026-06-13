@@ -2,7 +2,7 @@
 
 > Last updated: 2026-06-13 (KST)
 > Branch: `main`
-> Latest commit: `5b90771` - Phase 4(오프라인): 쓰기 큐 — 오프라인 레슨 풀이→복귀 동기화 (D22). **커밋 완료 · `origin/main` 미푸시(사용자 요청 시 푸시)**
+> Latest commit: `acd81dc` - Phase 4(오프라인): 쓰기 큐 — 오프라인 레슨 풀이→복귀 동기화 (D22). **커밋 완료 · `origin/main` 미푸시(사용자 요청 시 푸시)**
 > Repo: https://github.com/withwooyong/ted_duolingo (**public**)
 
 ## Current Status
