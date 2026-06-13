@@ -7,6 +7,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-13] Phase 4 — 오프라인 읽기 캐시
+
+### Added
+- 오프라인 읽기 캐시(D21) — 네트워크가 끊겨도 스킬트리·레슨·문제·프로필 등 콘텐츠 스냅샷을 열람. 쓰기 큐는 충돌 위험으로 범위 제외
+- `apps/mobile/src/lib/query-client.ts` — QueryClient 모듈 분리(gcTime 24h·refetchOnReconnect), 사용자별 AsyncStorage persister 팩토리(`makePersister` — storage 키에 userId 포함), `CACHE_BUSTER`, persist 선별 `shouldDehydrateQuery`(`league`·`review-count`·`review-session` 제외)
+- `apps/mobile/src/lib/online-status.ts` — `initOnlineManager()`로 네트워크 상태를 `onlineManager`에 연결(네이티브만 NetInfo, 웹은 기본 리스너)
+- `apps/mobile/src/hooks/use-online.ts` — `useOnline()`(useSyncExternalStore로 onlineManager 구독)
+- `apps/mobile/src/components/offline-banner.tsx` — 오프라인 시 상단 배너(무애니메이션 — Expo web 함정 회피)
+- 의존성 — `@tanstack/react-query-persist-client`·`@tanstack/query-async-storage-persister`·`@react-native-community/netinfo`
+- e2e — `apps/mobile/e2e/offline_loop.py` (15체크): 배너·캐시 열람·persist 키 스코프·진입 차단·사용자 캐시 분리
+
+### Changed
+- `apps/mobile/src/app/_layout.tsx` — `QueryClientProvider`→`PersistQueryClientProvider`(`key={userId}`로 사용자별 리마운트, 로그아웃 시 `clear()`+persist 캐시 제거), `OfflineBanner` 배치
+- `apps/mobile/src/app/(tabs)/index.tsx` — 오프라인 시 레슨/복습 진입 차단(`startLesson`/`startReview` 가드 + `offline-blocked` 인라인 안내)
+- `apps/mobile/src/app/review.tsx` — 오프라인 2차 방어(딥링크 직접 진입 차단)
+
+---
+
 ## [2026-06-13] Phase 4 — Shadowing (발음 따라하기 / STT)
 
 ### Added

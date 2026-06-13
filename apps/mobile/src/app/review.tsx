@@ -11,6 +11,7 @@ import { ListenSelect } from '@/components/exercise/listen-select';
 import { MatchPairs } from '@/components/exercise/match-pairs';
 import { OrderWords } from '@/components/exercise/order-words';
 import { ShadowSpeak } from '@/components/exercise/shadow-speak';
+import { useOnline } from '@/hooks/use-online';
 import { useCompleteReview, useReviewSession } from '@/hooks/use-review';
 
 const TYPE_LABELS: Record<ExerciseDto['type'], string> = {
@@ -47,9 +48,29 @@ const INITIAL: PlayState = {
 export default function ReviewScreen() {
   const { data: session, isLoading, error } = useReviewSession();
   const completeReview = useCompleteReview();
+  const online = useOnline();
 
   const [play, setPlay] = useState<PlayState>(INITIAL);
   const [answer, setAnswer] = useState<string | null>(null);
+
+  // 오프라인 2차 방어(D21) — 딥링크 직접 진입 대비. 진행 저장 불가 + 세션 쿼리가 paused되므로 차단.
+  if (online === false && play.phase !== 'done') {
+    return (
+      <View className="flex-1 items-center justify-center gap-3 bg-white px-8" testID="review-offline">
+        <Text className="text-5xl">📡</Text>
+        <Text className="text-center text-base font-extrabold text-ink-sub">
+          오프라인 상태에선 복습할 수 없어요. 연결 후 다시 시도하세요.
+        </Text>
+        <Pressable
+          className="mt-4 rounded-2xl bg-brand px-8 py-4 active:opacity-80"
+          onPress={() => router.back()}
+          testID="review-offline-home"
+        >
+          <Text className="text-base font-extrabold uppercase text-white">홈으로</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   if (isLoading || !session) {
     return (

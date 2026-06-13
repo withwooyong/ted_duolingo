@@ -26,7 +26,7 @@ supabase stop         # 중지
 
 개발은 로컬 Supabase 기준 (`.env`들은 로컬 기본값, gitignore 대상). 처음 띄울 때 순서: `supabase start` → `pnpm db:migrate` → RLS SQL 수동 적용(아래) → `pnpm db:seed`.
 
-테스트: `pnpm test` (shared의 vitest — 게임화·SM-2·Shadowing 채점 로직). e2e는 `apps/mobile/e2e/learning_loop.py`(학습 루프 67체크 — Shadowing 포함)와 `apps/mobile/e2e/review_loop.py`(SM-2 복습 9체크 — psql로 due_at 백데이트) (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조). Shadowing은 `window.__mockShadowTranscript`로 STT 인식 결과를 주입한다.
+테스트: `pnpm test` (shared의 vitest — 게임화·SM-2·Shadowing 채점 로직). e2e는 `apps/mobile/e2e/learning_loop.py`(학습 루프 67체크 — Shadowing 포함), `apps/mobile/e2e/review_loop.py`(SM-2 복습 9체크 — psql로 due_at 백데이트), `apps/mobile/e2e/offline_loop.py`(오프라인 읽기 캐시 15체크 — `set_offline`로 배너·캐시 열람·진입 차단·사용자 캐시 분리) (Expo web + Playwright, 로컬 Supabase 필요 — e2e/README.md 참조). Shadowing은 `window.__mockShadowTranscript`로 STT 인식 결과를 주입한다.
 
 테스트 프레임워크는 아직 없음 (Phase 1에서 도입 예정).
 
@@ -58,6 +58,9 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 - **Reanimated entering/exiting 프리셋(FadeIn 등)은 Expo web에서 동작하지 않음** — 요소가 안 보이는 상태로 멈춘다. shared value 직접 구동으로 구현할 것 (`complete.tsx`의 `Reveal`, `confetti.tsx` 참조)
 - 리그 주간 마감은 클라이언트가 새 주 첫 진입 시 수행 (`lib/gamification.ts`의 `ensureLeagueEntry`) — 주간 XP는 profiles가 아닌 league_entries 행 기준으로 누적
 - **새 라우트 파일 추가 후 typecheck는 Expo dev 서버가 `.expo/types/router.d.ts`를 재생성해야 통과** — typed routes가 stale이면 `router.push('/새경로')`가 타입 에러를 낸다 (`pnpm mobile` 잠깐 기동으로 해결)
+- **오프라인 감지는 플랫폼별로 다른 경로**(`lib/online-status.ts`) — 웹은 `onlineManager` 기본 window online/offline 리스너를 그대로 쓰고(NetInfo web은 window offline 이벤트에 즉시 반응 안 함), 네이티브만 NetInfo를 `setEventListener`로 연결한다. `Platform.OS==='web'`이면 NetInfo 연결을 건너뛸 것
+- **dev web(Expo web)은 서비스워커가 없어 오프라인 full reload(번들 재요청)가 불가** — 그래서 `offline_loop.py`는 reload 대신 SPA 내 탭 이동으로 캐시 열람을 검증하고, persist 기록은 localStorage 캐시 내용(`skill-tree` 포함)으로 확인한다. 실제 오프라인 reload 복원은 네이티브(임베드 번들) 또는 PWA(SW 캐시)에서만
+- **Metro CI 모드(`CI=1 expo start`)는 파일 변경을 워치하지 않는다** — `lib/online-status.ts` 등 수정 후 e2e가 stale 번들을 쓰면 `--clear`로 재기동해야 반영된다
 
 ## 핵심 도메인 개념
 
@@ -69,6 +72,7 @@ cd packages/db && pnpm exec prisma db execute --schema prisma/schema.prisma --fi
 - **게임화 수치의 서버 측 검증(Edge Function)은 Phase 2로 미룸** — MVP는 클라이언트가 직접 update (RLS 주석 참조)
 - **SM-2 복습**: 레슨·복습 풀이마다 `lib/gamification.ts`의 `upsertReviewStates`가 문제별 `UserReviewState`(SM-2 순수 로직은 `@ted/shared` `sm2Update`)를 갱신. 홈은 `useDueReviewCount`로 due 배너 표시, `/review`는 due 문제(활성 언어쌍·due 순 최대 `REVIEW_BATCH_SIZE`)를 레슨과 같은 컴포넌트로 재생. 복습 XP는 총합만·하트 무소모 (D19). 완료 화면은 세션 refetch보다 우선 렌더(빈 세션으로 가려지지 않게), 진입은 홈 push라 완료 시 `router.back()`
 - **Shadowing(`SHADOW_SPEAK`)**: 문장을 TTS로 들려주고 따라 말하면 STT로 채점 (D20). 채점은 순수 함수 `@ted/shared` `scoreShadowing`(정답 단어 포함률) ≥ `SHADOW_PASS_RATIO`(0.6) — `checkers.ts`가 transcript를 답으로 받아 처리하므로 하트·SM-2는 다른 유형과 동일. STT는 `lib/speech-recognition.ts` 추상화: **웹만 Web Speech API 실연동**, 네이티브는 `createShadowRecognizer`가 null→컴포넌트가 "직접 확인" fallback (실 네이티브 STT는 EAS 빌드 시 `@react-native-voice/voice` 등을 이 파일에 연결). `value`(transcript) 변동에 대응해 컴포넌트는 문제별 `key`로 remount(effect 내 setState 금지 — React Compiler 린트)
+- **오프라인 읽기 캐시(D21)**: QueryClient·persist 설정은 `lib/query-client.ts` 단일 소스. `_layout.tsx`가 `PersistQueryClientProvider`로 감싸되 **`key={userId}`로 사용자별 리마운트** + persister storage 키에 userId 포함(`makePersister`)해 캐시를 물리 분리하고, 로그아웃 시 `queryClient.clear()`+`removePersistedCache`로 정리. 어떤 쿼리를 영속/제외할지는 `shouldDehydrateQuery`(시각·주간 의존 `league`·`review-count`·`review-session` 제외 — stale 값 오해 방지). 캐시 DTO 모양이 바뀌면 `CACHE_BUSTER`를 올려 구버전 캐시를 폐기(안 하면 stale shape 크래시). 네트워크 상태는 `lib/online-status.ts`가 `onlineManager`에 연결하고 컴포넌트는 `useOnline()`(useSyncExternalStore)로 구독 — 쿼리 일시정지와 UI가 같은 신호 공유. 오프라인 시 레슨·복습 **진입을 차단**(홈 `startLesson`/`startReview` + `review.tsx` 2차 방어), 안내는 `Alert`(web no-op) 대신 `testID` 인라인 요소
 
 ## 개발 원칙
 

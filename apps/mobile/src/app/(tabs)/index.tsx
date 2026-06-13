@@ -1,8 +1,10 @@
 import { LANG_FLAGS, LANG_LABELS } from '@ted/shared';
 import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useDailyXp, useHearts } from '@/hooks/use-game';
+import { useOnline } from '@/hooks/use-online';
 import { useUserLanguages } from '@/hooks/use-onboarding';
 import { useProfile } from '@/hooks/use-profile';
 import { useDueReviewCount } from '@/hooks/use-review';
@@ -16,13 +18,24 @@ export default function HomeScreen() {
   const { data: languages, isLoading: langLoading } = useUserLanguages();
   const { data: tree, isLoading: treeLoading } = useSkillTree();
   const { data: dueReviews } = useDueReviewCount();
+  const online = useOnline();
+  const [showOfflineBlock, setShowOfflineBlock] = useState(false);
 
   // 학습 언어 미등록 → 온보딩 (PLAN.md §4)
   if (!langLoading && languages && languages.length === 0) {
     return <Redirect href="/onboarding" />;
   }
 
+  // 오프라인에선 진행 저장이 불가하므로 풀이 진입을 차단(D21) — 다 풀고 저장 실패하는 UX 방지.
+  // Alert는 Expo web에서 no-op이라 e2e 친화적인 인라인 토스트로 안내한다.
+  const blockOffline = (): boolean => {
+    if (online) return false;
+    setShowOfflineBlock(true);
+    return true;
+  };
+
   const startLesson = (lessonId: string) => {
+    if (blockOffline()) return;
     if (hearts !== null && hearts <= 0) {
       Alert.alert('하트가 없어요 💔', '하트는 시간당 1개씩 충전됩니다.\nPremium은 하트 무제한!', [
         { text: '기다리기', style: 'cancel' },
@@ -31,6 +44,11 @@ export default function HomeScreen() {
       return;
     }
     router.push(`/lesson/${lessonId}`);
+  };
+
+  const startReview = () => {
+    if (blockOffline()) return;
+    router.push('/review');
   };
 
   const goalXp = profile?.dailyGoalXp ?? 20;
@@ -56,6 +74,19 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      {/* 오프라인 풀이 차단 안내 (D21) */}
+      {showOfflineBlock && !online && (
+        <Pressable
+          className="mx-5 mt-3 rounded-2xl border-2 border-danger bg-danger/10 px-4 py-3 active:opacity-80"
+          onPress={() => setShowOfflineBlock(false)}
+          testID="offline-blocked"
+        >
+          <Text className="text-center text-sm font-extrabold text-danger">
+            오프라인 상태에선 학습을 시작할 수 없어요. 연결 후 다시 시도하세요.
+          </Text>
+        </Pressable>
+      )}
+
       {/* 일일 목표 */}
       <View className="px-5 pt-3">
         <View className="flex-row justify-between">
@@ -76,7 +107,7 @@ export default function HomeScreen() {
       {!!dueReviews && dueReviews > 0 && (
         <Pressable
           className="mx-5 mt-3 flex-row items-center justify-between rounded-2xl border-2 border-grape bg-grape/10 px-4 py-3 active:opacity-80"
-          onPress={() => router.push('/review')}
+          onPress={startReview}
           testID="review-banner"
         >
           <Text className="text-sm font-extrabold text-grape">🔄 복습할 문제 {dueReviews}개</Text>
@@ -109,7 +140,7 @@ export default function HomeScreen() {
                 } else if (skill.nextLesson) {
                   startLesson(skill.nextLesson.id);
                 } else if (dueReviews && dueReviews > 0) {
-                  router.push('/review');
+                  startReview();
                 } else {
                   Alert.alert('✓ 완료한 스킬', '복습할 문제는 간격을 두고 다시 나와요. 곧 복습으로 만나요!');
                 }

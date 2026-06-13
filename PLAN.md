@@ -1,7 +1,7 @@
 # Ted Duolingo — 프로젝트 계획서
 
 > Duolingo 스타일의 게임화 다국어 학습 앱  
-> v0.7 (Phase 4 Shadowing STT — 결정 D20 반영) | 2026-06-13
+> v0.8 (Phase 4 오프라인 읽기 캐시 — 결정 D21 반영) | 2026-06-13
 
 ---
 
@@ -38,6 +38,7 @@
 | D18 | Admin 스택 | **Hono SSR(React 없음) + Prisma 직접 연결** — Expo hoisted node_modules의 React 중복 회피. AI 생성은 Claude(`claude-opus-4-8`) 구조화 출력, 키 없으면 모의 생성. 발행 전 `validateDraftSkill` 강제 |
 | D19 | SM-2 복습 | **문제별 전용 상태 테이블 `UserReviewState`**(이력 테이블에서 재계산 대신 영속). binary 채점→quality(정답5·오답2) 매핑, 활성 언어쌍 필터용 `language_pair_id` 비정규화. 복습 XP는 총합(profile.xp)에만 반영(주간 리그·일일 목표 제외)·하트 무소모. 서버 검증은 클라우드 전환 시 Edge Function으로 |
 | D20 | Shadowing(STT) | **6번째 문제 유형 `SHADOW_SPEAK`** — 기존 5종·레슨·SM-2 복습에 그대로 편입(별도 모드 아님). 채점은 정확 일치 대신 **단어 포함률(recall) ≥ 0.6**(초보자 관대, STT가 구두점·억양을 흘리므로). STT는 **추상화 레이어**(`lib/speech-recognition.ts`): 웹은 Web Speech API 실연동, 네이티브 실 STT는 EAS 커스텀 빌드 필요라 현재 "직접 확인" fallback(D16/OAuth와 동일한 클라우드 경계). e2e(웹)는 `window.__mockShadowTranscript`로 인식 결과 주입 |
+| D21 | 오프라인 모드 | **읽기 캐시 중심** — 쓰기 큐는 충돌 위험으로 범위 제외. ① TanStack Query persistence(AsyncStorage)로 스킬트리·레슨·문제·프로필 등 콘텐츠 스냅샷 영속, persister storage 키에 userId를 넣어 **사용자별 캐시 물리 분리**(로그아웃 시 제거). ② NetInfo를 `onlineManager`에 연결(네이티브만; 웹은 기본 window online/offline 리스너 사용). ③ 시각·주간 마감 의존 쿼리(`league`·`review-count`·`review-session`)는 stale 값이 오해를 부르므로 persist 제외(`shouldDehydrateQuery`). ④ 오프라인 시 레슨·복습 **진입을 차단**(다 풀고 저장 실패 방지). 한계: dev web은 서비스워커가 없어 오프라인 full reload 불가(네이티브는 임베드 번들로 정상, 실제 오프라인 복원은 native/PWA) |
 
 ### 1.3 목표
 
@@ -323,8 +324,8 @@ League
 
 - [x] SM-2 복습 알고리즘 (간격 반복 — 레슨·복습 풀이마다 문제별 상태 갱신, 홈 복습 배너 + `/review` 세션. 복습 XP는 총합에만 반영·하트 무소모. e2e 9개 체크)
 - [x] Shadowing (STT) — 6번째 문제 유형 `SHADOW_SPEAK`. TTS 참조 재생 → 따라 말하기 → 단어 포함률 채점(임계 0.6). STT 추상화: 웹 Web Speech API 실연동, 네이티브 실 STT는 EAS 빌드 시 (현재 fallback). 레슨·복습 공통 (D20)
-- [ ] 오프라인 모드
-- [ ] Web/PWA (선택)
+- [x] 오프라인 모드 (읽기 캐시 — TanStack Query persistence로 콘텐츠 오프라인 열람, 사용자별 캐시 분리, 오프라인 배너, 풀이 진입 차단. 쓰기 큐는 범위 제외. e2e 15개 체크. D21)
+- [ ] Web/PWA (선택 — 오프라인 full reload 복원은 서비스워커 필요라 이 단계에서 완성)
 
 ---
 
