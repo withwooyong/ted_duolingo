@@ -2,66 +2,67 @@
 
 > Last updated: 2026-06-13 (KST)
 > Branch: `main`
-> Latest commit: `7f68948` - Phase 2: 풀 게임화 구현 (e2e 38개 체크 검증 완료)
-> Repo: https://github.com/withwooyong/ted_duolingo (**public**)
+> Latest commit: `699b171` - Phase 3(2/2): Admin 웹 — AI 생성 + 검수 워크플로 (e2e 15개 체크 검증 완료)
+> Repo: https://github.com/withwooyong/ted_duolingo (**public**, 이번 세션 커밋 2개는 미푸시)
 
 ## Current Status
 
-Phase 0(기반) → 1(핵심 학습 루프) → 2(풀 게임화)까지 완료. 로컬 Supabase 위에서 가입→온보딩→레슨(5종)→XP/스트릭/하트→리그 주간 랭킹→배지→설정(일일 목표·알림)까지 전부 실동작하며 e2e 38개 체크로 검증됨. 다음은 Phase 3(Freemium·콘텐츠·Admin).
+Phase 0(기반) → 1(학습 루프) → 2(풀 게임화) → **3(Freemium·언어쌍·Admin) 로컬 범위 완료**. 페이월(mock 구독)·광고 분기·ko→ja 언어쌍·언어 전환(무료 1개 제한→페이월)·Admin 웹(AI 생성→검수→발행)까지 실동작. 검증: vitest 51개 + 모바일 e2e 62개 + Admin e2e 15개. Phase 3 잔여는 RevenueCat/IAP 실연동뿐이며 클라우드 전환 + EAS 빌드가 선행 조건.
 
 ## Completed This Session
 
 | # | Task | Commit | Files |
 |---|------|--------|-------|
-| 1 | 리그/주간 랭킹 — 코호트 배정·클라이언트 주간 마감(승급/강등, D14)·리그 화면 | `7f68948` | src/lib/gamification.ts, src/hooks/use-league.ts, src/app/(tabs)/league.tsx |
-| 2 | 배지 6종 판정·수여 + 완료 화면 새 배지 표시 + 프로필 통계·배지 그리드 | `7f68948` | packages/shared/src/logic.ts, src/hooks/use-game.ts, src/app/(tabs)/profile.tsx |
-| 3 | 스트릭 알림 (expo-notifications 일일 리마인더) + 설정 화면(일일 목표 변경) | `7f68948` | src/lib/reminder.ts, src/app/settings.tsx |
-| 4 | 레슨 완료 연출 — Reanimated 컨페티·등장 (D15) | `7f68948` | src/components/confetti.tsx, src/app/lesson/[id]/complete.tsx |
-| 5 | RLS 0002(리그 본인 행 쓰기·프로필 읽기 공개) + 리그 봇 9명 시드 | `7f68948` | supabase/policies/0002_phase2_league_badges.sql, packages/db/prisma/seed.ts |
-| 6 | 검증 — vitest 38개(+21), e2e 38개 체크(+15), PLAN v0.4·CLAUDE.md 현행화 | `7f68948` | logic.test.ts, e2e/learning_loop.py, PLAN.md, CLAUDE.md |
+| 1 | 페이월(비교·플랜·mock 구독/해지, D16) + Premium 분기(광고 배너 제거·구독 관리) | `9097423` | src/app/premium.tsx, src/hooks/use-premium.ts, src/components/ad-banner.tsx |
+| 2 | 추가 언어쌍 ko→ja 시드 + 언어 전환/추가 UI + 무료 1개 제한→페이월 (D17) | `9097423` | packages/db/prisma/seed.ts, src/app/languages.tsx, src/hooks/use-languages.ts |
+| 3 | 스킬 트리 활성 언어쌍 기반 전환(ko→en 하드코딩 제거) + TTS 로케일 학습어 기준 | `9097423` | src/hooks/use-skill-tree.ts, src/components/exercise/listen-select.tsx, (tabs)/index·profile |
+| 4 | shared — isPremiumActive·premiumExpiryDate·PREMIUM_PLANS·언어 메타 + e2e 62개(+24) | `9097423` | packages/shared/src/{logic,constants,types}.ts, apps/mobile/e2e/learning_loop.py |
+| 5 | Admin 웹 — Hono SSR, AI 생성(Claude 구조화 출력)/모의 생성, 검수·발행 (D13·D18) | `699b171` | apps/admin/src/{server.tsx,generate.ts,views.tsx,db.ts}, apps/admin/README.md |
+| 6 | ContentDraft 스키마 + RLS 0003 + validateDraftSkill(+vitest 7) + Admin e2e 15개 | `699b171` | packages/db/prisma/schema.prisma, supabase/policies/0003_content_drafts.sql, packages/shared/src/draft.ts |
 
 ## In Progress / Pending
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 1 | Phase 3 — Freemium & 콘텐츠 | ⬜ 다음 세션 | RevenueCat+IAP 구독, Premium 기능(무제한 하트·광고 제거), Admin AI 생성+검수, 추가 언어쌍 (PLAN §8) |
-| 2 | 게임화 수치 서버 검증 (Edge Function) | ⬜ 클라우드 전환 시 | 현재 클라이언트가 profiles·league_entries 직접 update — RLS 0002 주석 참조, 이전 시 league_insert/update_own 정책 제거 |
-| 3 | Google·Apple OAuth | ⬜ 보류 | 클라우드 Supabase 전환 시 (로컬은 이메일만) |
-| 4 | 완료 스킬 복습 기능 | ⬜ 미정 | 홈에서 완료 스킬 탭 시 "곧 추가" 알림만 표시 |
-| 5 | Lottie 에셋 교체 | ⬜ 선택 | 완료 연출은 Reanimated로 구현(D15) — 디자이너 Lottie 에셋 확보 시 교체, 웹은 @lottiefiles/dotlottie-react 필요 |
+| 1 | RevenueCat + IAP 실연동 | ⬜ 클라우드 전환 후 | **클라우드 Supabase + EAS 빌드 시점을 사용자와 논의 후 진행.** 교체 지점은 `hooks/use-premium.ts` mutationFn + RevenueCat 웹훅→Edge Function (D16 주석 참조) |
+| 2 | Phase 4 — 고도화 | ⬜ 다음 후보 | SM-2 복습(스키마 UserExerciseHistory 선반영됨), Shadowing(STT), 오프라인 모드, Web/PWA (PLAN §8) |
+| 3 | 게임화 수치 서버 검증 (Edge Function) | ⬜ 클라우드 전환 시 | 클라이언트가 profiles·league_entries 직접 update — RLS 0002 주석 참조 |
+| 4 | Google·Apple OAuth | ⬜ 보류 | 클라우드 Supabase 전환 시 (로컬은 이메일만) |
+| 5 | 완료 스킬 복습 기능 | ⬜ 미정 | 홈에서 완료 스킬 탭 시 "곧 추가" 알림만 표시 — Phase 4 SM-2와 묶어 구현 권장 |
+| 6 | Lottie 에셋 교체 / 실광고(AdMob) | ⬜ 선택 | 완료 연출은 Reanimated(D15), 광고는 ad-banner.tsx placeholder — 에셋·네이티브 빌드 확보 시 교체 |
+| 7 | Premium 가격 확정 | ⬜ 스토어 제출 전 | PREMIUM_PLANS(월 9,900/연 79,000)는 임시값 (D16) — 앱 이름(U2)과 함께 제출 전 결정 |
 
 ## Key Decisions Made
 
-- **D14 — 리그 주간 마감은 클라이언트 수행**: 서버 없는 Supabase only(D12) 제약. 새 주 첫 진입 시 `ensureLeagueEntry`가 직전 주 순위 확정→승급/강등→주간 XP 리셋→코호트 배정을 수행. Edge Function 일원화는 클라우드 전환 시
-- **D15 — 완료 연출은 Reanimated**: 웹 Lottie는 추가 의존성 필요 + 실제 에셋 부재. 컨페티·등장 모두 shared value 직접 구동
-- **주간 XP의 진실은 league_entries 행**: profiles.weekly_xp는 미러 — 새 주 진입 직후 캐시 불일치를 피하기 위해 레슨 완료 시 entry.weekly_xp 기준으로 누적
-- **프로필 읽기 RLS 전체 공개로 전환** (0002): 리그 순위표에 타인 이름 표시 필요. Duolingo류 리더보드 특성상 준공개 데이터로 판단
-- **리그 봇은 시드에서 고정 UUID로 생성**: Prisma 스키마에 auth FK가 없어 auth.users 없이 profiles 삽입 가능. 재시드 시 현재 주차로 참가 기록 갱신
+- **D16 — 구독은 로컬 mock 결제**: RevenueCat/IAP는 Expo Go·로컬에서 테스트 불가. `use-premium.ts`가 profiles의 `is_premium`+`premium_expires_at`을 직접 갱신하고, 만료 판정은 `isPremiumActive` 순수 함수로 조회 시점에 수행. 실연동 시 훅 내부만 교체
+- **D17 — 활성 언어쌍은 user_languages.is_active 기준 1개**: 스킬 트리·홈 배너·TTS 로케일이 이를 따름. 전환은 클라이언트(전체 비활성→선택 upsert). 무료는 1개(FREE_MAX_LEARNING_LANGS), 초과 추가는 페이월로
+- **D18 — Admin은 Hono SSR (React 없음)**: Expo의 hoisted node_modules에서 Next.js/Vite React가 React 버전 충돌을 일으킬 위험 회피. Prisma 직접 연결(postgres 롤)로 RLS 우회 — 로컬/사설망 전용
+- **AI 생성은 구조화 출력 + 발행 전 검증 이중 방어**: zod 스키마(`zodOutputFormat`)로 형태 보장, `validateDraftSkill`로 도메인 규약(5~8문제, options[0] 정답, ORDER 단어 포함 등) 강제. 키 없으면 모의 생성 모드로 파이프라인 검증 가능
+- **content_drafts RLS는 정책 없이 활성화만**: anon/authenticated PostgREST 접근 전부 차단, Admin은 직접 연결이라 영향 없음
 
 ## Known Issues
 
-- **Reanimated entering/exiting 프리셋(FadeIn 등)은 Expo web에서 동작 안 함** — 요소가 안 보이는 상태로 멈춤. shared value 직접 구동으로 구현할 것 (complete.tsx `Reveal`, confetti.tsx 참조) ← 이번 세션 발견, CLAUDE.md에 기록
-- 봇 코호트(10명)는 e2e 반복 실행으로 차면 새 코호트가 생성됨 — e2e는 인원 대신 정렬을 검증하도록 수정됨. 봇과 다시 겨루려면 재시드
-- 시드의 봇 리그 참가 기록은 시드 실행 시점의 주차 — 주가 바뀌면 `pnpm db:seed`로 갱신 필요 (콘텐츠도 재생성되므로 진행 기록 삭제 주의)
-- Prisma `@default(cuid())`는 DB 기본값이 아님 — supabase-js insert 시 id 직접 생성 (`Crypto.randomUUID()`)
-- Metro가 가끔 파일 변경을 못 잡음 — 반영 안 되면 dev 서버 재시작 (`--clear`)
-- expo-notifications는 Expo web에서 경고 로그 출력 (동작엔 무해, 리마인더는 네이티브 전용)
+- **새 라우트 파일 추가 후 typecheck 실패 가능** — Expo typed routes(`.expo/types/router.d.ts`)는 dev 서버가 재생성해야 갱신됨. `pnpm mobile` 잠깐 기동으로 해결 (CLAUDE.md에 기록)
+- **Admin e2e는 실행마다 발행 스킬이 누적됨** — `pnpm db:seed`로 정리(해당 언어쌍 콘텐츠 재생성, 진행 기록 삭제 주의). 현재 DB에 테스트 발행 스킬 1개(en '쇼핑테스트-…', order 5) 남아 있음
+- 프로필 화면 쿼리 증가로 배지 grid 로딩이 늦어질 수 있음 — e2e는 배지 로딩을 명시적으로 대기하도록 수정됨
+- Alert.alert는 Expo web에서 no-op — 웹에서 하트 소진/레슨 이탈 다이얼로그가 안 뜸 (네이티브 전용 UX, e2e는 해당 경로 미사용)
+- 봇 코호트·시드 주차·Metro 캐시·cuid() 기본값 등 기존 함정은 CLAUDE.md 참조
 
 ## Context for Next Session
 
-- **사용자 목표**: PLAN.md 기반 앱 전체 완성. 품질 우선, Phase 순서 (0✅→1✅→2✅→3→4)
-- **다음 작업 = Phase 3 Freemium & 콘텐츠** (PLAN §8): ① RevenueCat + IAP 구독 ② Premium 기능 — 무제한 하트(`isPremium` 분기는 이미 구현됨)·광고 제거 ③ Admin 웹: AI 생성 + 검수 워크플로 (D13) ④ 추가 언어쌍 확장. IAP·RevenueCat은 로컬/Expo Go 제약이 크므로 **클라우드 Supabase 전환 + EAS 빌드 시점을 먼저 사용자와 논의**할 것
-- **개발 환경 기동**: `supabase start` → (스키마 변경 시) `pnpm db:migrate` + policies/ SQL 번호순 수동 적용(0001, 0002) → `pnpm db:seed`. 명령·함정은 CLAUDE.md 참조
-- **검증 루틴**: `pnpm typecheck` + `pnpm lint` + `pnpm test`(vitest 38개) + e2e(`python3 apps/mobile/e2e/learning_loop.py`, Expo web 8081 + 로컬 Supabase 필요, 38개 체크)
-- **게임화 수치는 @ted/shared/constants.ts가 단일 소스** — 변경 시 PLAN.md 동기화. 리그·배지 로직은 logic.ts 순수 함수 + lib/gamification.ts(supabase 호출)
-- **사용자 선호**: 커밋 메시지 한글, 푸시는 명시 요청 시만, 미확정 항목(앱 이름 U2 등)은 구현 전 확인
+- **사용자 목표**: PLAN.md 기반 앱 전체 완성. 품질 우선, Phase 순서 (0✅→1✅→2✅→3 로컬✅→4)
+- **다음 작업 후보**: ① **클라우드 Supabase 전환 + EAS 빌드 + RevenueCat 실연동** (Phase 3 마감 — 사용자와 계정/비용 논의 필요) 또는 ② **Phase 4 고도화**(SM-2 복습부터 — UserExerciseHistory 이력은 이미 쌓이고 있음). 시작 전 사용자에게 방향 확인할 것
+- **개발 환경 기동**: `supabase start` → `pnpm db:migrate` → policies/ SQL 번호순 수동 적용(0001~0003) → `pnpm db:seed`. Admin은 `cp apps/admin/.env.example apps/admin/.env` 후 `pnpm admin`(3100). AI 생성은 .env에 `ANTHROPIC_API_KEY` 추가 시 활성
+- **검증 루틴**: `pnpm typecheck` + `pnpm lint` + `pnpm test`(vitest 51개) + 모바일 e2e(`python3 apps/mobile/e2e/learning_loop.py`, Expo web 8081, 62개 체크) + Admin e2e(`python3 apps/admin/e2e/admin_flow.py`, 3100, 15개 체크)
+- **게임화·Freemium 수치는 @ted/shared/constants.ts가 단일 소스** — PREMIUM_PLANS·LANG_* 포함. 변경 시 PLAN.md 동기화
+- **미푸시 상태**: `9097423`, `699b171` 두 커밋이 로컬에만 있음 — 푸시는 사용자 명시 요청 시만
+- **사용자 선호**: 커밋 메시지 한글, 푸시는 명시 요청 시만, 미확정 항목(앱 이름 U2, Premium 가격 등)은 구현 전 확인
 
 ## Files Modified This Session
 
 ```
-21 files changed, 1260 insertions(+), 88 deletions(-) (7f68948: Phase 2 풀 게임화)
-신규: src/lib/gamification.ts, src/lib/reminder.ts, src/hooks/use-league.ts,
-      src/components/confetti.tsx, supabase/policies/0002_phase2_league_badges.sql
-주요 수정: use-game.ts(리그 XP·배지 통합), league/profile/settings/complete 화면,
-      packages/shared(logic·constants·types +테스트), seed.ts(봇), e2e(+15 체크)
+9097423 (Phase 3 1/2): 24 files, +839 -109 — premium/languages 화면, use-premium/use-languages 훅,
+        ad-banner, 스킬 트리 활성 언어쌍 전환, 시드 ko→ja, shared 구독·언어 로직, e2e +24
+699b171 (Phase 3 2/2): 19 files, +1202 -2 — apps/admin 신규(서버·생성·뷰·e2e),
+        ContentDraft 마이그레이션, RLS 0003, shared draft 검증(+테스트), 루트 admin 스크립트
 ```

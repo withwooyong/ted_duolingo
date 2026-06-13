@@ -7,6 +7,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-13] Phase 3 — Freemium · 추가 언어쌍 · Admin 웹
+
+### Added
+- 페이월 화면 전면 구현 — Free vs Premium 비교 테이블(§3.4)·월/연 플랜 선택·mock 구독/해지, 구독 중이면 만료일·혜택·해지 UI (`9097423`)
+- 구독 mock `hooks/use-premium.ts` — profiles의 `is_premium`·`premium_expires_at` 직접 갱신 (D16: RevenueCat 전환 시 이 훅만 교체) (`9097423`)
+- 광고 배너 placeholder `components/ad-banner.tsx` — 무료 사용자 레슨 완료 화면에만 표시, 탭하면 페이월 (실광고 AdMob은 네이티브 빌드 시) (`9097423`)
+- 추가 언어쌍 ko→ja — 시드 2스킬·2레슨·11문제(5종 유형 전부, 수동 제작 D13) (`9097423`)
+- 학습 언어 전환·추가 화면 `/languages` (D17) — 홈 HUD 국기·설정에서 진입, 무료 1개 제한 초과 추가 시 페이월로 유도 (`9097423`)
+- 언어 메타 단일 소스 — `LANG_FLAGS`·`LANG_LABELS`·`SPEECH_LOCALES`(TTS 로케일 학습어 기준) + `PREMIUM_PLANS`(가격 임시값) (`9097423`)
+- shared 순수 로직 — `isPremiumActive`·`premiumExpiryDate` + vitest 44개(+6) (`9097423`)
+- Admin 웹 `apps/admin` — Hono SSR 내부 도구 (D18: React 없음, Expo hoisted node_modules 충돌 회피), `pnpm admin`(포트 3100) (`699b171`)
+- AI 콘텐츠 생성 — Claude `claude-opus-4-8` 구조화 출력(zod), `ANTHROPIC_API_KEY` 없으면 모의 생성(결정적 오프라인 샘플) (`699b171`)
+- 검수 워크플로 — 드래프트(content_drafts) 목록/생성/JSON 수정/반려/승인·발행(skills·lessons·exercises insert, 트리 맨 뒤 order) (`699b171`)
+- 드래프트 검증 `@ted/shared` `validateDraftSkill` — 레슨당 5~8문제·payload 유형 일치·LISTEN/MCQ 정답 options[0] 규약 강제 + vitest 51개(+7) (`699b171`)
+- ContentDraft 모델 마이그레이션 + RLS 0003 — 정책 없이 활성화해 anon API 차단 (Admin은 Prisma 직접 연결로 우회) (`699b171`)
+- Admin e2e 15개 체크 (`apps/admin/e2e/admin_flow.py`) — 모의 생성→검증 실패/복구→발행→반려 (`699b171`)
+
+### Changed
+- 스킬 트리 ko→en 하드코딩 제거 — 활성 언어쌍(user_languages.is_active) 기반 조회, 홈 단원 배너·프로필 국기 동적 표시 (`9097423`)
+- 온보딩 언어 선택 — DB 언어쌍 목록 그대로 노출(ja 포함), "준비 중" 하드코딩 카드 제거 (`9097423`)
+- 하트 소진 안내(레슨·홈)에 "Premium 보기" 진입점 추가, 설정에 학습 언어·구독 관리 섹션 추가 (`9097423`)
+- 모바일 e2e 62개 체크로 확장(+24) — 광고 배너, 무료 언어 제한→페이월, mock 구독, 언어 전환/재전환(진행 보존), ja 레슨 풀 플레이, PREMIUM 배지 (`9097423`)
+- PLAN v0.5 — D16(구독 mock)·D17(ko→ja)·D18(Admin 스택) 추가, §8 Phase 3·§9.1 언어쌍 현행화 (`9097423`, `699b171`)
+- CLAUDE.md — Freemium·언어쌍·Admin 아키텍처, typed routes 재생성 함정 추가 (`9097423`, `699b171`)
+
+---
+
 ## [2026-06-12] Phase 2 — 풀 게임화
 
 ### Added
