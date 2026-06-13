@@ -7,6 +7,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-13] Phase 4 — PWA 오프라인 full reload 복원
+
+### Added
+- PWA 앱 셸 캐시(D23) — 오프라인에서 page reload 시 앱이 부팅되게 하는 마지막 조각. D21(데이터 persist)·D22(쓰기 큐)에 더해, 정적 export + 서비스워커로 **앱 셸(index.html + 해시 JS/CSS 번들)**을 캐시. SW는 교차 오리진(Supabase)·비-GET을 통과시켜 역할 분리 유지(데이터=persist, 쓰기=sync-queue)
+- `apps/mobile/public/sw.js` — 런타임 캐싱 서비스워커: 네비게이션 network-first(오프라인이면 셸 `/` fallback) / `/_expo/static/`·`/assets/` 해시 에셋 cache-first / 그 외 same-origin GET network-first. 교차 오리진·비-GET 미개입. `SHELL_CACHE` 버전은 RQ `CACHE_BUSTER`와 독립, `activate`에서 구버전 정리 + `clients.claim()`
+- `apps/mobile/public/index.html` — web `output:"single"`은 `+html.tsx`를 무시하므로 HTML 셸 커스터마이즈(manifest 링크·theme-color·apple-touch-icon)를 여기서. Expo가 CSS/JS 해시 링크를 자동 주입
+- `apps/mobile/public/manifest.json` + `icon-192.png`/`icon-512.png`(기존 아이콘 sips 리사이즈) — PWA 매니페스트(`public/`는 export 시 `dist/` 루트로 복사)
+- `apps/mobile/src/components/sw-register.tsx` — `_layout` 마운트, web + **production export에서만** `/sw.js` 등록(dev Metro는 캐시할 해시 번들 없어 제외)
+- `pnpm build:web`(루트·mobile) — `expo export -p web` → `dist/`
+- e2e — `apps/mobile/e2e/pwa_offline_reload.py` (13체크): `dist/`를 자체 python SPA 서버(3010)로 서빙, SW control 확보 후 `set_offline`+`reload`로 앱 셸 복원·스킬 트리 복원·배너 검증
+
+### Changed
+- `apps/mobile/src/lib/online-status.ts` — 웹 초기 상태를 `navigator.onLine`으로 동기화. onlineManager 기본값은 `online:true`이고 이벤트로만 갱신돼, 오프라인으로 full reload되면 앱이 온라인으로 착각하던 문제(배너 미표시·쿼리 일시정지 안 됨) 수정
+- `apps/mobile/src/app/_layout.tsx` — `SwRegister` 마운트
+- 검증: vitest 63 + 모바일 e2e 67(학습)+9(복습)+15(오프라인 읽기)+21(오프라인 쓰기)+**13(PWA, 신규)** 전부 통과, typecheck·lint clean
+
+---
+
 ## [2026-06-13] Phase 4 — 오프라인 쓰기 큐
 
 ### Added

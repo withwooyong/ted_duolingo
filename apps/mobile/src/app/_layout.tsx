@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 
 import { OfflineBanner } from '@/components/offline-banner';
+import { SwRegister } from '@/components/sw-register';
 import { SyncProcessor } from '@/components/sync-processor';
 import { initOnlineManager } from '@/lib/online-status';
 import {
@@ -43,6 +44,7 @@ export default function RootLayout() {
     <>
       <OfflineBanner />
       <SyncProcessor />
+      <SwRegister />
       <Stack
         screenOptions={{
           headerShown: false,
