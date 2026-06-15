@@ -7,6 +7,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/).
 
 ---
 
+## [2026-06-15] 학습 루프 UI 버그 수정 (짝 맞추기 · 따라하기)
+
+### Fixed
+- 짝 맞추기(MATCH_PAIRS) — 좌(한국어)·우(영어) 두 열에서 각 한 장씩만 매칭에 쓰이도록 수정 (`126b8e5`). 기존엔 전체를 한 그리드에 섞어 깔아 같은 쪽 두 장(한↔한, 영↔영)도 선택돼 결국 오답 처리됐다. 전체 셔플 1개 → 열별 독립 셔플 2개로 분리하고, 같은 열 재탭은 오답이 아니라 선택만 이동, 서로 다른 열을 골랐을 때만 정/오답 판정. testID(`match-ko-i`/`match-en-i`)는 유지해 기존 e2e 5종 호환
+- 따라하기(SHADOW_SPEAK) — STT 실패 시 원인과 무관하게 "잘 안 들렸어요"만 띄우던 `onError`를 Web Speech API 에러 코드별 안내로 분기 (`126b8e5`). `not-allowed`/`service-not-allowed`(마이크 권한), `network`(인식 서버 연결), `audio-capture`(장치), `no-speech`(말소리), `aborted`(중단)를 구분. `rec.start()`가 동기적으로 던지는 예외(미허용·중복 시작)도 try/catch 처리
+- 검증: typecheck·expo lint clean. Playwright로 실제 앱 구동해 짝 맞추기 3케이스(같은쪽 선택 이동·좌우 정답 매칭·좌우 오답 표시) + 두 열 레이아웃(좌 한국어/우 영어) 확인, JS 에러 없음
+
+---
+
 ## [2026-06-14] Phase 4 — 오프라인 복습 큐 (D24)
 
 ### Added
