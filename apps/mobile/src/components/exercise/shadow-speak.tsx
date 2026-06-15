@@ -24,6 +24,28 @@ interface Props {
 }
 
 /**
+ * Web Speech API 에러 코드를 사용자용 안내 문구로 변환.
+ * 코드는 SpeechRecognitionErrorEvent.error (https://wicg.github.io/speech-api/).
+ */
+function sttErrorMessage(reason: string): string {
+  switch (reason) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return '마이크 권한이 막혀 있어요. 주소창의 마이크 아이콘에서 허용해 주세요.';
+    case 'network':
+      return '음성 인식 서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.';
+    case 'audio-capture':
+      return '마이크를 찾을 수 없어요. 입력 장치를 확인해 주세요.';
+    case 'no-speech':
+      return '말소리가 안 들렸어요. 버튼을 누르고 또렷하게 말해 주세요.';
+    case 'aborted':
+      return '음성 인식이 중단됐어요. 다시 시도해 주세요.';
+    default:
+      return '잘 안 들렸어요. 다시 시도해 주세요.';
+  }
+}
+
+/**
  * 발음 따라하기 — 문장을 TTS로 들려주고, 사용자가 따라 말하면 STT로 채점한다.
  * STT 미지원 환경(네이티브 Expo Go 등)에서는 "직접 확인" fallback으로 진행 (lib/speech-recognition 참조).
  */
@@ -59,9 +81,9 @@ export function ShadowSpeak({ payload, targetLang, value, onChange, disabled }: 
         setListening(false);
         onChange(transcript);
       },
-      onError: () => {
+      onError: (reason) => {
         setListening(false);
-        setError('잘 안 들렸어요. 다시 시도해 주세요.');
+        setError(sttErrorMessage(reason));
       },
     });
     if (!rec) {
@@ -70,7 +92,13 @@ export function ShadowSpeak({ payload, targetLang, value, onChange, disabled }: 
     }
     recRef.current = rec;
     setListening(true);
-    rec.start();
+    // start()는 미허용·이미 시작됨 등에서 동기적으로 throw할 수 있다.
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+      setError(sttErrorMessage('not-allowed'));
+    }
   };
 
   const score = value !== null ? scoreShadowing(payload.text, value) : null;
